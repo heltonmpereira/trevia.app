@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+logs/
+*.log
+.env
+.env.*
+!/.env.example
+appsettings.Production.json
+TestResults/
+coverage/
+.DS_Store
+Thumbs.db
