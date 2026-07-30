@@ -27,3 +27,5 @@ Cadastro de usuários, exercícios, fichas, execução de treinos, evolução, f
 - [Deploy no Render](deploy/RENDER.md)
 
 O TRAE deve começar lendo `PROJECT_SPEC.md` e executar somente a primeira tarefa nele definida.
+
+alterado com o trae
