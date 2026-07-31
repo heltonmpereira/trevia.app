@@ -43,6 +43,9 @@ public sealed class UpdateEquipmentsCommandHandler : ICommandHandler<UpdateEquip
 
         profile.UpdateEquipments(distinctEquipments);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("UpdateEquipmentsHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
         _logger.LogInformation(
             "EquipmentsUpdated ProfileId={ProfileId} Count={Count}",
             profile.Id,

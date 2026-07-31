@@ -56,6 +56,9 @@ public sealed class UpsertWeightEntryCommandHandler : ICommandHandler<UpsertWeig
         if (latestEntry is null)
             throw new InvalidOperationException("Falha ao adicionar entrada de peso.");
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("UpsertWeightEntryHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId} EntryId={EntryId}", profile.Id, latestEntry.Id);
+
         _logger.LogInformation(
             "WeightEntryAdded ProfileId={ProfileId} EntryId={EntryId} WeightKg={WeightKg}",
             profile.Id,

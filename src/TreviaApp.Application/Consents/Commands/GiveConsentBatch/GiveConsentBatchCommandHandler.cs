@@ -65,6 +65,7 @@ public class GiveConsentBatchCommandHandler : ICommandHandler<GiveConsentBatchCo
         _logger.LogInformation("UserGaveConsents UserId={UserId} Types={types}", userId.Value, types);
 
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("GiveConsentBatchHandler: SaveChangesAsync explícito concluído para UserId={UserId}", userId.Value);
 
         var resultTuples = typesToCreate.Any()
             ? typesToCreate

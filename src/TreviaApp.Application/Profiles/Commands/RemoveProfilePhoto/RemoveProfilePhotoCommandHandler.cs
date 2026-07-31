@@ -56,6 +56,9 @@ public sealed class RemoveProfilePhotoCommandHandler : ICommandHandler<RemovePro
 
             profile.RemovePhoto();
 
+            await _db.SaveChangesAsync(cancellationToken);
+            _logger.LogDebug("RemoveProfilePhotoHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
             _logger.LogInformation(
                 "ProfilePhotoRemoved ProfileId={ProfileId}",
                 profile.Id);

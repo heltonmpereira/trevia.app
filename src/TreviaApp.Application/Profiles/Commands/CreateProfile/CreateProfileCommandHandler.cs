@@ -52,6 +52,9 @@ public sealed class CreateProfileCommandHandler : ICommandHandler<CreateProfileC
 
         _db.Set<UserProfile>().Add(profile);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("CreateProfileHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
         _logger.LogInformation(
             "ProfileCreated ProfileId={ProfileId} UserId={UserId}",
             profile.Id,

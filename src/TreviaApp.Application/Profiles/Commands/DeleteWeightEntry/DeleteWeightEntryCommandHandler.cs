@@ -40,6 +40,9 @@ public sealed class DeleteWeightEntryCommandHandler : ICommandHandler<DeleteWeig
 
         profile.RemoveWeightEntry(request.WeightEntryId);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("DeleteWeightEntryHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId} EntryId={EntryId}", profile.Id, request.WeightEntryId);
+
         _logger.LogInformation(
             "WeightEntryRemoved ProfileId={ProfileId} EntryId={EntryId}",
             profile.Id,

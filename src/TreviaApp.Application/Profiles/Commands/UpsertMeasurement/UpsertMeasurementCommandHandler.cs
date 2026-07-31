@@ -62,6 +62,9 @@ public sealed class UpsertMeasurementCommandHandler : ICommandHandler<UpsertMeas
 
         profile.AddMeasurement(measurement);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("UpsertMeasurementHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId} MeasurementId={MeasurementId}", profile.Id, measurement.Id);
+
         _logger.LogInformation(
             "MeasurementAdded ProfileId={ProfileId} MeasurementId={MeasurementId}",
             profile.Id,

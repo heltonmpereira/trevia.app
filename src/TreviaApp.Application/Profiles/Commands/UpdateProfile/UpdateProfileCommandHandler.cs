@@ -50,6 +50,9 @@ public sealed class UpdateProfileCommandHandler : ICommandHandler<UpdateProfileC
             request.PrivacyLevel,
             request.PreferredUnits);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("UpdateProfileHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
         _logger.LogInformation(
             "ProfileUpdated ProfileId={ProfileId} UserId={UserId}",
             profile.Id,

@@ -40,6 +40,9 @@ public sealed class DeleteMeasurementCommandHandler : ICommandHandler<DeleteMeas
 
         profile.RemoveMeasurement(request.MeasurementId);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("DeleteMeasurementHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId} MeasurementId={MeasurementId}", profile.Id, request.MeasurementId);
+
         _logger.LogInformation(
             "MeasurementRemoved ProfileId={ProfileId} MeasurementId={MeasurementId}",
             profile.Id,

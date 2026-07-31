@@ -39,6 +39,9 @@ public class RevokeConsentCommandHandler : ICommandHandler<RevokeConsentCommand>
             c.Revoke(request.Reason);
         }
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("RevokeConsentHandler: SaveChangesAsync explícito concluído para UserId={UserId} Type={ConsentType}", userId.Value, request.ConsentType);
+
         _logger.LogInformation("UserRevokedConsent UserId={UserId} Type={ConsentType}", userId.Value, request.ConsentType);
     }
 }

@@ -100,6 +100,9 @@ public sealed class UploadProfilePhotoCommandHandler : ICommandHandler<UploadPro
 
         profile.SetPhoto(fileId, request.FileName, request.ContentType, request.SizeBytes);
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("UploadProfilePhotoHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
         var accessUrl = await _storage.GetTemporaryUrlAsync(fileId, TimeSpan.FromHours(1), cancellationToken);
 
         _logger.LogInformation(

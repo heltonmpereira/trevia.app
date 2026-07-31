@@ -40,6 +40,9 @@ public sealed class DeleteProfileCommandHandler : ICommandHandler<DeleteProfileC
 
         profile.Delete();
 
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("DeleteProfileHandler: SaveChangesAsync explícito concluído para ProfileId={ProfileId}", profile.Id);
+
         _logger.LogInformation(
             "ProfileSoftDeleted ProfileId={ProfileId} UserId={UserId}",
             profile.Id,
