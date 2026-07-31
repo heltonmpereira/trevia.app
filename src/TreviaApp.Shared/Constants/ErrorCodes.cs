@@ -27,4 +27,13 @@ public static class ErrorCodes
     public const string ExerciseMediaNotFound = nameof(ExerciseMediaNotFound);
     public const string MuscleAlreadyInExercise = nameof(MuscleAlreadyInExercise);
     public const string EquipmentAlreadyInExercise = nameof(EquipmentAlreadyInExercise);
+
+    public const string TrainingPlanNotFound = nameof(TrainingPlanNotFound);
+    public const string TrainingPlanNotOwner = nameof(TrainingPlanNotOwner);
+    public const string TrainingPlanNotEditable = nameof(TrainingPlanNotEditable);
+    public const string TrainingPlanNotPublishable = nameof(TrainingPlanNotPublishable);
+    public const string TrainingPlanSessionNotFound = nameof(TrainingPlanSessionNotFound);
+    public const string TrainingPlanSessionExerciseNotFound = nameof(TrainingPlanSessionExerciseNotFound);
+    public const string ExerciseNotApprovedGlobal = nameof(ExerciseNotApprovedGlobal);
+    public const string DuplicateExerciseInSession = nameof(DuplicateExerciseInSession);
 }

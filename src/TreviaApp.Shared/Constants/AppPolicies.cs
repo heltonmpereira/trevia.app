@@ -16,4 +16,6 @@ public static class AppPolicies
     public const string CanManageConsents = nameof(CanManageConsents);
     public const string CanModerateExercises = nameof(CanModerateExercises);
     public const string IsExerciseOwner = nameof(IsExerciseOwner);
+    public const string CanAssignTrainingPlans = nameof(CanAssignTrainingPlans);
+    public const string IsTrainingPlanOwner = nameof(IsTrainingPlanOwner);
 }
