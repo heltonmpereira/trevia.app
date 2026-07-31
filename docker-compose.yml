@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: treviaapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: treviaapp_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - treviaapp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: src/TreviaApp.Api/Dockerfile
+    container_name: treviaapp-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      PORT: 5000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=treviaapp_dev;Username=postgres;Password=postgres;Include Error Detail=true"
+      Jwt__Issuer: "TreviaApp.Docker"
+      Jwt__Audience: "TreviaApp.Docker"
+      Jwt__Key: "SUPER_SECRET_DOCKER_KEY_REPLACE_ME_PLEASE_1234567890_ABCDEF_XYZ_9876543210"
+      Jwt__AccessTokenMinutes: 60
+      Jwt__RefreshTokenDays: 30
+      Cors__AllowedOrigins__0: "*"
+      AdminSeed__Email: "admin@trevia.app"
+      AdminSeed__Password: "Admin123!"
+      FileStorage__Provider: "Local"
+      FileStorage__RootPath: "/app_data/files"
+      ApiOptions__UseDetailedErrors: "true"
+    ports:
+      - "5000:5000"
+    volumes:
+      - treviaapp-files:/app_data
+
+  client:
+    build:
+      context: .
+      dockerfile: src/TreviaApp.Client/Dockerfile
+      args:
+        API_BASE_URL: "http://localhost:5000"
+    container_name: treviaapp-client
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5005:80"
+
+volumes:
+  treviaapp-pgdata:
+  treviaapp-files:

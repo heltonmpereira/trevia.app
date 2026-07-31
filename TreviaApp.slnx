@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TreviaApp.Api/TreviaApp.Api.csproj" />
+    <Project Path="src/TreviaApp.Application/TreviaApp.Application.csproj" />
+    <Project Path="src/TreviaApp.Client/TreviaApp.Client.csproj" />
+    <Project Path="src/TreviaApp.Contracts/TreviaApp.Contracts.csproj" />
+    <Project Path="src/TreviaApp.Domain/TreviaApp.Domain.csproj" />
+    <Project Path="src/TreviaApp.Infrastructure/TreviaApp.Infrastructure.csproj" />
+    <Project Path="src/TreviaApp.Shared/TreviaApp.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TreviaApp.ArchitectureTests/TreviaApp.ArchitectureTests.csproj" />
+    <Project Path="tests/TreviaApp.IntegrationTests/TreviaApp.IntegrationTests.csproj" />
+    <Project Path="tests/TreviaApp.UnitTests/TreviaApp.UnitTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+  client:
+    image: nginx:alpine
+    volumes:
+      - ./src/TreviaApp.Client/wwwroot:/usr/share/nginx/html:ro

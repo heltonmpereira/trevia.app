@@ -1,0 +1,10 @@
+global using MediatR;
+global using Microsoft.AspNetCore.Identity;
+global using Microsoft.Extensions.Logging;
+global using TreviaApp.Application.Abstractions.Messaging;
+global using TreviaApp.Application.Email;
+global using TreviaApp.Application.Security;
+global using TreviaApp.Contracts.Authentication;
+global using TreviaApp.Domain.Exceptions;
+global using TreviaApp.Domain.Identity;
+global using TreviaApp.Shared.Constants;
