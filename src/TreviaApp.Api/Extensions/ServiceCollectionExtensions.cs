@@ -1,11 +1,10 @@
 namespace TreviaApp.Api.Extensions;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+
 using System.Reflection;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.OpenApi.Models;
 using TreviaApp.Api.Options;
-using TreviaApp.Shared.Constants;
 
 public static class ServiceCollectionExtensions
 {
