@@ -1,8 +1,9 @@
 namespace TreviaApp.Infrastructure.Persistence;
 
+using System.Diagnostics;
+using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
@@ -38,6 +39,19 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
                 if (entry.State == EntityState.Modified) user.UpdatedAt = DateTimeOffset.UtcNow;
             }
         }
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .LogTo(message => Debug.WriteLine(message))
+            .EnableDetailedErrors();
+#if DEBUG
+        optionsBuilder.EnableSensitiveDataLogging();
+#endif
+
+
+        base.OnConfiguring(optionsBuilder);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

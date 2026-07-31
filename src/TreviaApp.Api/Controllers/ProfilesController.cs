@@ -189,11 +189,12 @@ public class ProfilesController : ApiControllerBase
     }
 
     [HttpPost("photo")]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(PhotoUploadResultResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadProfilePhoto([FromForm] IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile file, CancellationToken ct)
     {
         if (file == null || file.Length <= 0)
         {
