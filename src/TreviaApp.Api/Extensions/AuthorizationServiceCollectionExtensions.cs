@@ -25,7 +25,15 @@ public static class AuthorizationServiceCollectionExtensions
                 policy.AddRequirements(new IsProfileOwnerRequirement()))
             .AddPolicy(AppPolicies.IsExerciseOwner, p => p.AddRequirements(new IsExerciseOwnerRequirement()))
             .AddPolicy(AppPolicies.CanAssignTrainingPlans, p => p.RequireRole(AppRoles.Trainer, AppRoles.Administrator, AppRoles.GymManager))
-            .AddPolicy(AppPolicies.IsTrainingPlanOwner, p => p.AddRequirements(new IsTrainingPlanOwnerRequirement()));
+            .AddPolicy(AppPolicies.IsTrainingPlanOwner, p => p.AddRequirements(new IsTrainingPlanOwnerRequirement()))
+            .AddPolicy(AppPolicies.CanManageCoachRelationships, p => p.RequireRole(AppRoles.Trainer, AppRoles.Student, AppRoles.Administrator, AppRoles.GymManager))
+            .AddPolicy(AppPolicies.IsLinkedTrainer, p => p.AddRequirements(new IsLinkedTrainerRequirement()))
+            .AddPolicy(AppPolicies.IsLinkedStudent, p => p.AddRequirements(new IsLinkedStudentRequirement()))
+            .AddPolicy(AppPolicies.IsLinkedTrainerOrAdmin, p =>
+            {
+                p.RequireRole(AppRoles.Administrator, AppRoles.GymManager);
+                p.AddRequirements(new IsLinkedTrainerRequirement());
+            });
 
         services.Configure<AuthorizationOptions>(opts =>
         {
@@ -35,6 +43,8 @@ public static class AuthorizationServiceCollectionExtensions
         services.AddScoped<IAuthorizationHandler, ProfileOwnerAuthorizationHandler>();
         services.AddScoped<IAuthorizationHandler, ExerciseOwnerAuthorizationHandler>();
         services.AddScoped<IAuthorizationHandler, TrainingPlanOwnerAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, LinkedTrainerAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, LinkedStudentAuthorizationHandler>();
 
         return services;
     }

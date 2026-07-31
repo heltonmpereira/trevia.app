@@ -5,6 +5,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Domain.Coaching;
 using TreviaApp.Domain.Exercises;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
@@ -31,6 +32,8 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
     public DbSet<SetPrescription> SetPrescriptions => Set<SetPrescription>();
+    public DbSet<CoachStudentRequest> CoachStudentRequests => Set<CoachStudentRequest>();
+    public DbSet<CoachStudentLink> CoachStudentLinks => Set<CoachStudentLink>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -73,6 +76,8 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         builder.Entity<UserProfile>().HasQueryFilter(p => !p.IsDeleted);
         builder.Entity<Exercise>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<TrainingPlan>().HasQueryFilter(tp => !tp.IsDeleted);
+        builder.Entity<CoachStudentRequest>().HasQueryFilter(r => !r.IsDeleted);
+        builder.Entity<CoachStudentLink>().HasQueryFilter(l => !l.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

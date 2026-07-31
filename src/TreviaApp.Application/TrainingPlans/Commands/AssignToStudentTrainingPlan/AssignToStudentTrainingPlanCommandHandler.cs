@@ -6,9 +6,11 @@ using TreviaApp.Application.Abstractions.Messaging;
 using TreviaApp.Application.Security;
 using TreviaApp.Application.TrainingPlans.Mappings;
 using TreviaApp.Contracts.TrainingPlans.Responses;
+using TreviaApp.Domain.Coaching;
 using TreviaApp.Domain.Exceptions;
 using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Shared.Constants;
+using TreviaApp.Shared.Enums;
 
 public sealed class AssignToStudentTrainingPlanCommandHandler : ICommandHandler<AssignToStudentTrainingPlanCommand, TrainingPlanDetailResponse>
 {
@@ -43,6 +45,8 @@ public sealed class AssignToStudentTrainingPlanCommandHandler : ICommandHandler<
         if (tp.AssignedToStudentId.HasValue)
             throw new DomainException("Este plano de treino já foi atribuído a um aluno e não pode ser editado/reatribuído.", ErrorCodes.TrainingPlanNotEditable);
 
+        await ValidateCoachStudentLinkAsync(userId, request.StudentId, cancellationToken);
+
         tp.AssignToStudent(request.StudentId);
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -62,5 +66,30 @@ public sealed class AssignToStudentTrainingPlanCommandHandler : ICommandHandler<
         return (userId.HasValue && userId == tp.CreatedByUserId)
                || _currentUser.IsInRole(AppRoles.Administrator)
                || _currentUser.IsInRole(AppRoles.GymManager);
+    }
+
+    private async Task ValidateCoachStudentLinkAsync(Guid? coachUserId, Guid studentId, CancellationToken ct)
+    {
+        if (!coachUserId.HasValue)
+            throw new DomainException("Usuário não autenticado.", ErrorCodes.Unauthorized);
+
+        if (_currentUser.IsInRole(AppRoles.Administrator) || _currentUser.IsInRole(AppRoles.GymManager))
+            return;
+
+        if (_currentUser.IsInRole(AppRoles.Trainer))
+        {
+            var hasActiveLink = await _db.Set<CoachStudentLink>()
+                .AnyAsync(l =>
+                    l.CoachId == coachUserId.Value &&
+                    l.StudentId == studentId &&
+                    l.IsActive &&
+                    l.Permissions.HasFlag(CoachPermissions.CanAssignTrainingPlans),
+                    ct);
+
+            if (!hasActiveLink)
+                throw new DomainException(
+                    "Você não possui um vínculo ativo com este aluno. Envie um convite e aguarde o aceite antes de atribuir fichas.",
+                    ErrorCodes.CoachNoActiveLinkToAssignPlan);
+        }
     }
 }

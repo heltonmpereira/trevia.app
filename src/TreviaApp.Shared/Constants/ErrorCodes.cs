@@ -36,4 +36,21 @@ public static class ErrorCodes
     public const string TrainingPlanSessionExerciseNotFound = nameof(TrainingPlanSessionExerciseNotFound);
     public const string ExerciseNotApprovedGlobal = nameof(ExerciseNotApprovedGlobal);
     public const string DuplicateExerciseInSession = nameof(DuplicateExerciseInSession);
+
+    public const string CoachInviteNotFound = nameof(CoachInviteNotFound);
+    public const string CoachLinkNotFound = nameof(CoachLinkNotFound);
+    public const string CoachInviteNotPending = nameof(CoachInviteNotPending);
+    public const string CoachInviteExpired = nameof(CoachInviteExpired);
+    public const string CoachLinkAlreadyExists = nameof(CoachLinkAlreadyExists);
+    public const string CoachLinkAlreadyInactive = nameof(CoachLinkAlreadyInactive);
+    public const string CoachLinkNotOwnerOfRelationship = nameof(CoachLinkNotOwnerOfRelationship);
+    public const string CoachCannotInviteSelf = nameof(CoachCannotInviteSelf);
+    public const string CoachUserNotFound = nameof(CoachUserNotFound);
+    public const string StudentUserNotFound = nameof(StudentUserNotFound);
+    public const string CoachRoleRequired = nameof(CoachRoleRequired);
+    public const string StudentRoleRequired = nameof(StudentRoleRequired);
+    public const string CoachInviteNotAuthorizedToRespond = nameof(CoachInviteNotAuthorizedToRespond);
+    public const string CoachInviteNotAuthorizedToCancel = nameof(CoachInviteNotAuthorizedToCancel);
+    public const string CoachNoActiveLinkToAssignPlan = nameof(CoachNoActiveLinkToAssignPlan);
+    public const string CoachInviteDuplicatePending = nameof(CoachInviteDuplicatePending);
 }
