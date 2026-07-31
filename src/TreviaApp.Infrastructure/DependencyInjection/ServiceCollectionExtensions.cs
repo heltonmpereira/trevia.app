@@ -16,6 +16,7 @@ using TreviaApp.Application.Abstractions.Storage;
 using TreviaApp.Application.Email;
 using TreviaApp.Application.Security;
 using TreviaApp.Domain.Identity;
+using TreviaApp.Domain.Interfaces;
 using TreviaApp.Infrastructure.Email;
 using TreviaApp.Infrastructure.Identity;
 using TreviaApp.Infrastructure.Persistence;
@@ -35,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connStr, o => o.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IUnitOfWork, ApplicationDbContext>();
 
         // Identity completo (SignInManager + token providers + lockout)
         services.AddIdentity<AppUser, AppRole>(options =>

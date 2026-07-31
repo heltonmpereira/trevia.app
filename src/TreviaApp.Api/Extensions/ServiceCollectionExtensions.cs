@@ -64,11 +64,11 @@ public static class ServiceCollectionExtensions
             if (File.Exists(contractsXml)) c.IncludeXmlComments(contractsXml);
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Name = "Authorization",
+                //Name = "Authorization",
                 Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
+                Scheme = "bearer",
                 BearerFormat = "JWT",
-                In = ParameterLocation.Header,
+                //In = ParameterLocation.Header,
                 Description = "JWT Authorization header. Ex: 'Bearer {token}'"
             });
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -76,7 +76,10 @@ public static class ServiceCollectionExtensions
                 {
                     new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        Reference = new OpenApiReference {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer" 
+                        }
                     },
                     Array.Empty<string>()
                 }

@@ -1,13 +1,15 @@
 namespace TreviaApp.Api.Extensions;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 public static class ApplicationBuilderExtensions
 {
     public static IApplicationBuilder UseSwaggerUi(this IApplicationBuilder app)
     {
         app.UseSwagger();
+
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "TreviaApp API v1");
