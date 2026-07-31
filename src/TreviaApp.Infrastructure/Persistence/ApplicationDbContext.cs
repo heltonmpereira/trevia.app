@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
 using TreviaApp.Infrastructure.Identity;
 

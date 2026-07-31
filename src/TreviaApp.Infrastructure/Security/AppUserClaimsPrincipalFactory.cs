@@ -3,7 +3,7 @@ namespace TreviaApp.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
-using TreviaApp.Infrastructure.Identity;
+using TreviaApp.Domain.Identity;
 using TreviaApp.Shared.Constants;
 
 public class AppUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<AppUser, AppRole>

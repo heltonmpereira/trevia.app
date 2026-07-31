@@ -1,7 +1,7 @@
 namespace TreviaApp.IntegrationTests.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using TreviaApp.Infrastructure.Identity;
+using TreviaApp.Domain.Identity;
 using TreviaApp.Shared.Constants;
 
 public static class TestingIdentitySeeder

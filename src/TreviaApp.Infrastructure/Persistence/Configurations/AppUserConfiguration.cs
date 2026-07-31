@@ -2,7 +2,7 @@ namespace TreviaApp.Infrastructure.Persistence.Configurations;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TreviaApp.Infrastructure.Identity;
+using TreviaApp.Domain.Identity;
 
 public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 {

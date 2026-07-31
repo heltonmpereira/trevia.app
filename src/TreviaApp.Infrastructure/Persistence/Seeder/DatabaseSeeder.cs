@@ -2,7 +2,7 @@ namespace TreviaApp.Infrastructure.Persistence.Seeder;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using TreviaApp.Infrastructure.Identity;
+using TreviaApp.Domain.Identity;
 using TreviaApp.Shared.Constants;
 
 public class DatabaseSeeder

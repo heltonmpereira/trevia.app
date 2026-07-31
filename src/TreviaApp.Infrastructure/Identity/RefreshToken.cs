@@ -1,5 +1,7 @@
 namespace TreviaApp.Infrastructure.Identity;
 
+using TreviaApp.Domain.Identity;
+
 public class RefreshToken
 {
     public long Id { get; set; }

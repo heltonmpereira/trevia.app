@@ -14,6 +14,7 @@ using System.Text;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Application.Abstractions.Storage;
 using TreviaApp.Application.Security;
+using TreviaApp.Domain.Identity;
 using TreviaApp.Infrastructure.Email;
 using TreviaApp.Infrastructure.Identity;
 using TreviaApp.Infrastructure.Persistence;
