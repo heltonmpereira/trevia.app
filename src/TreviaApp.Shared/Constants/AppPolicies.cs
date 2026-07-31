@@ -14,4 +14,6 @@ public static class AppPolicies
     public const string IsProfileOwner = nameof(IsProfileOwner);
     public const string IsLinkedTrainer = nameof(IsLinkedTrainer);
     public const string CanManageConsents = nameof(CanManageConsents);
+    public const string CanModerateExercises = nameof(CanModerateExercises);
+    public const string IsExerciseOwner = nameof(IsExerciseOwner);
 }

@@ -5,6 +5,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Domain.Exercises;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
 using TreviaApp.Domain.Profiles;
@@ -21,6 +22,10 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<ProfilePhoto> ProfilePhotos => Set<ProfilePhoto>();
     public DbSet<UserEquipment> UserEquipments => Set<UserEquipment>();
     public DbSet<UserConsent> UserConsents => Set<UserConsent>();
+    public DbSet<Exercise> Exercises => Set<Exercise>();
+    public DbSet<ExerciseMuscle> ExerciseMuscles => Set<ExerciseMuscle>();
+    public DbSet<ExerciseEquipment> ExerciseEquipments => Set<ExerciseEquipment>();
+    public DbSet<ExerciseMedia> ExerciseMedias => Set<ExerciseMedia>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -61,6 +66,7 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         ConfigureDefaultDecimalPrecision(builder);
 
         builder.Entity<UserProfile>().HasQueryFilter(p => !p.IsDeleted);
+        builder.Entity<Exercise>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

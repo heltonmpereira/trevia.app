@@ -16,4 +16,15 @@ public static class ErrorCodes
     public const string ProfileAlreadyExists = nameof(ProfileAlreadyExists);
     public const string ProfileNotFound = nameof(ProfileNotFound);
     public const string ProfilePrivate = nameof(ProfilePrivate);
+
+    public const string ExerciseNotFound = nameof(ExerciseNotFound);
+    public const string ExerciseNotOwner = nameof(ExerciseNotOwner);
+    public const string ExerciseNotAwaitingApproval = nameof(ExerciseNotAwaitingApproval);
+    public const string ExerciseAlreadyApproved = nameof(ExerciseAlreadyApproved);
+    public const string ExerciseAlreadyRejected = nameof(ExerciseAlreadyRejected);
+    public const string ExerciseRejectReasonRequired = nameof(ExerciseRejectReasonRequired);
+    public const string ExerciseSlugNotUnique = nameof(ExerciseSlugNotUnique);
+    public const string ExerciseMediaNotFound = nameof(ExerciseMediaNotFound);
+    public const string MuscleAlreadyInExercise = nameof(MuscleAlreadyInExercise);
+    public const string EquipmentAlreadyInExercise = nameof(EquipmentAlreadyInExercise);
 }

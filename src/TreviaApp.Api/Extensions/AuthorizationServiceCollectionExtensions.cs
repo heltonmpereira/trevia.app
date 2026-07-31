@@ -20,8 +20,10 @@ public static class AuthorizationServiceCollectionExtensions
             .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
             .AddPolicy(AppPolicies.CanManageConsents, policy =>
                 policy.RequireRole(AppRoles.Administrator, AppRoles.GymManager))
+            .AddPolicy(AppPolicies.CanModerateExercises, p => p.RequireRole(AppRoles.Administrator, AppRoles.GymManager))
             .AddPolicy(AppPolicies.IsProfileOwner, policy =>
-                policy.AddRequirements(new IsProfileOwnerRequirement()));
+                policy.AddRequirements(new IsProfileOwnerRequirement()))
+            .AddPolicy(AppPolicies.IsExerciseOwner, p => p.AddRequirements(new IsExerciseOwnerRequirement()));
 
         services.Configure<AuthorizationOptions>(opts =>
         {
@@ -29,6 +31,7 @@ public static class AuthorizationServiceCollectionExtensions
         });
 
         services.AddScoped<IAuthorizationHandler, ProfileOwnerAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, ExerciseOwnerAuthorizationHandler>();
 
         return services;
     }
