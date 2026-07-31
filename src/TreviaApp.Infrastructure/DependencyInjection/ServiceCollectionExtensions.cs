@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scrutor;
 using System.Text;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Application.Abstractions.Privacy;
 using TreviaApp.Application.Abstractions.Storage;
 using TreviaApp.Application.Email;
 using TreviaApp.Application.Security;
@@ -22,6 +23,7 @@ using TreviaApp.Infrastructure.Identity;
 using TreviaApp.Infrastructure.Persistence;
 using TreviaApp.Infrastructure.Persistence.Seeder;
 using TreviaApp.Infrastructure.Security;
+using TreviaApp.Infrastructure.Services;
 using TreviaApp.Infrastructure.Storage;
 
 public static class ServiceCollectionExtensions
@@ -125,6 +127,8 @@ public static class ServiceCollectionExtensions
 
         services.Configure<EmailOptions>(configuration.GetSection("Email"));
         services.AddScoped<IEmailSender, DevelopmentFileEmailSender>();
+
+        services.AddScoped<IProfilePrivacyService, ProfilePrivacyService>();
 
         return services;
     }

@@ -19,6 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddApiAuthorizationPolicies();
 
 var app = builder.Build();

@@ -6,6 +6,7 @@ using System.Reflection;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
+using TreviaApp.Domain.Profiles;
 using TreviaApp.Infrastructure.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
@@ -13,6 +14,12 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<WeightEntry> WeightEntries => Set<WeightEntry>();
+    public DbSet<PhysicalMeasurement> PhysicalMeasurements => Set<PhysicalMeasurement>();
+    public DbSet<ProfilePhoto> ProfilePhotos => Set<ProfilePhoto>();
+    public DbSet<UserEquipment> UserEquipments => Set<UserEquipment>();
+    public DbSet<UserConsent> UserConsents => Set<UserConsent>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -38,6 +45,8 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         ConfigureDefaultDecimalPrecision(builder);
+
+        builder.Entity<UserProfile>().HasQueryFilter(p => !p.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

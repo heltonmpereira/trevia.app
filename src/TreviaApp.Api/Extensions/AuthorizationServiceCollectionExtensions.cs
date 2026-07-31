@@ -1,6 +1,7 @@
 namespace TreviaApp.Api.Extensions;
 
 using Microsoft.AspNetCore.Authorization;
+using TreviaApp.Api.Extensions.Authorization;
 using TreviaApp.Shared.Constants;
 
 public static class AuthorizationServiceCollectionExtensions
@@ -16,12 +17,18 @@ public static class AuthorizationServiceCollectionExtensions
             .AddPolicy(AppPolicies.CanManageUsers, policy => policy.RequireRole(AppRoles.Administrator, AppRoles.GymManager))
             .AddPolicy(AppPolicies.CanManageExercises, policy => policy.RequireRole(AppRoles.Trainer, AppRoles.Administrator))
             .AddPolicy(AppPolicies.CanCreateTrainingPlans, policy => policy.RequireRole(AppRoles.Trainer, AppRoles.Administrator))
-            .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser());
+            .AddPolicy(AppPolicies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser())
+            .AddPolicy(AppPolicies.CanManageConsents, policy =>
+                policy.RequireRole(AppRoles.Administrator, AppRoles.GymManager))
+            .AddPolicy(AppPolicies.IsProfileOwner, policy =>
+                policy.AddRequirements(new IsProfileOwnerRequirement()));
 
         services.Configure<AuthorizationOptions>(opts =>
         {
             opts.InvokeHandlersAfterFailure = false;
         });
+
+        services.AddScoped<IAuthorizationHandler, ProfileOwnerAuthorizationHandler>();
 
         return services;
     }

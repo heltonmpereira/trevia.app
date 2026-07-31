@@ -13,4 +13,7 @@ public static class ErrorCodes
     public const string RefreshTokenExpired = nameof(RefreshTokenExpired);
     public const string DuplicateEmail = nameof(DuplicateEmail);
     public const string ConcurrencyError = nameof(ConcurrencyError);
+    public const string ProfileAlreadyExists = nameof(ProfileAlreadyExists);
+    public const string ProfileNotFound = nameof(ProfileNotFound);
+    public const string ProfilePrivate = nameof(ProfilePrivate);
 }
