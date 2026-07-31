@@ -3,6 +3,7 @@ namespace TreviaApp.Infrastructure.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text;
+using TreviaApp.Application.Email;
 
 public class DevelopmentFileEmailSender : IEmailSender
 {

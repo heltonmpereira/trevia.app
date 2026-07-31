@@ -13,6 +13,7 @@ using Scrutor;
 using System.Text;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Application.Abstractions.Storage;
+using TreviaApp.Application.Email;
 using TreviaApp.Application.Security;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Infrastructure.Email;
