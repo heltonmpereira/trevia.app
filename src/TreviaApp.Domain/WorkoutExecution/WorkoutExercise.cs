@@ -99,16 +99,16 @@ public class WorkoutExercise : Entity
     {
         var realSetNumber = setNumber > 0 ? setNumber : (_sets.Count == 0 ? 1 : _sets.Max(s => s.SetNumber) + 1);
         var set = new WorkoutSet(
-            Id,
+            workoutExerciseId: Id,
             setPrescriptionId: null,
-            realSetNumber,
+            setNumber: realSetNumber,
             targetRepsMin: null,
             targetRepsMax: null,
             targetLoadValue: null,
             targetLoadUnit: PrescriptionLoadUnit.Kilograms,
             targetRestSeconds: null,
-            technique: SetTechnique.Standard,
-            isAdditional: true);
+            techniqueApplied: SetTechnique.Standard,
+            isAdditionalSet: true);
 
         _sets.Add(set);
         UpdatedAt = DateTimeOffset.UtcNow;

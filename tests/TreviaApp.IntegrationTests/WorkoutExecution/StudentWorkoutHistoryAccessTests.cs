@@ -111,7 +111,7 @@ public class StudentWorkoutHistoryAccessTests : IAsyncLifetime
         workout.Finish(WorkoutRating.Moderate, "Sessao concluida", 180);
         db.Set<WorkoutSession>().Add(workout);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(CancellationToken.None);
 
         return (coachEmail, student.Id, workout.Id);
     }
