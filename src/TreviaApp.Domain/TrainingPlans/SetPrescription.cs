@@ -3,26 +3,74 @@ using TreviaApp.Shared.Enums;
 
 namespace TreviaApp.Domain.TrainingPlans;
 
+/// <summary>
+/// Represents the SetPrescription domain entity.
+/// </summary>
 public class SetPrescription : Entity
 {
+    /// <summary>
+    /// Gets Session Exercise Id.
+    /// </summary>
     public Guid SessionExerciseId { get; private set; }
+    /// <summary>
+    /// Gets Session Exercise.
+    /// </summary>
     public SessionExercise SessionExercise { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Set Number.
+    /// </summary>
     public int SetNumber { get; private set; }
+    /// <summary>
+    /// Gets Target Reps Min.
+    /// </summary>
     public int? TargetRepsMin { get; private set; }
+    /// <summary>
+    /// Gets Target Reps Max.
+    /// </summary>
     public int? TargetRepsMax { get; private set; }
+    /// <summary>
+    /// Gets Load Value.
+    /// </summary>
     public decimal? LoadValue { get; private set; }
+    /// <summary>
+    /// Gets Load Unit.
+    /// </summary>
     public PrescriptionLoadUnit LoadUnit { get; private set; } = PrescriptionLoadUnit.Kilograms;
+    /// <summary>
+    /// Gets Rest After Seconds.
+    /// </summary>
     public TimeSpan? RestAfterSeconds { get; private set; }
+    /// <summary>
+    /// Gets Technique Applied.
+    /// </summary>
     public SetTechnique TechniqueApplied { get; private set; } = SetTechnique.Standard;
+    /// <summary>
+    /// Gets Rate Of Perceived Exertion RPE.
+    /// </summary>
     public int? RateOfPerceivedExertionRPE { get; private set; }
+    /// <summary>
+    /// Gets Reps In Reserve RIR.
+    /// </summary>
     public int? RepsInReserveRIR { get; private set; }
+    /// <summary>
+    /// Gets Tempo Under Tension TUTSeconds.
+    /// </summary>
     public TimeSpan? TempoUnderTensionTUTSeconds { get; private set; }
+    /// <summary>
+    /// Gets Notes Professor.
+    /// </summary>
     public string? NotesProfessor { get; private set; }
+    /// <summary>
+    /// Gets Tempo Notation.
+    /// </summary>
     public string? TempoNotation { get; private set; }
 
     private SetPrescription() { }
 
+    /// <summary>
+    /// Initializes a new instance of the SetPrescription class.
+    /// </summary>
     public SetPrescription(
         Guid sessionExerciseId,
         int setNumber,
@@ -67,6 +115,9 @@ public class SetPrescription : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Update.
+    /// </summary>
     public void Update(
         int setNumber,
         int? targetRepsMin,
@@ -107,6 +158,9 @@ public class SetPrescription : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Set Number Update.
+    /// </summary>
     public void SetNumberUpdate(int newSetNumber)
     {
         if (newSetNumber < 1)

@@ -4,27 +4,69 @@ using TreviaApp.Shared.Enums;
 
 namespace TreviaApp.Domain.TrainingPlans;
 
+/// <summary>
+/// Represents the SessionExercise domain entity.
+/// </summary>
 public class SessionExercise : Entity
 {
+    /// <summary>
+    /// Gets Training Session Id.
+    /// </summary>
     public Guid TrainingSessionId { get; private set; }
+    /// <summary>
+    /// Gets Training Session.
+    /// </summary>
     public TrainingSession TrainingSession { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Exercise Id.
+    /// </summary>
     public Guid ExerciseId { get; private set; }
+    /// <summary>
+    /// Gets Exercise.
+    /// </summary>
     public Exercise Exercise { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Order.
+    /// </summary>
     public int Order { get; private set; }
+    /// <summary>
+    /// Gets Notes For Student.
+    /// </summary>
     public string? NotesForStudent { get; private set; }
+    /// <summary>
+    /// Gets Notes For Coach.
+    /// </summary>
     public string? NotesForCoach { get; private set; }
+    /// <summary>
+    /// Gets Rest Between Sets Seconds.
+    /// </summary>
     public TimeSpan? RestBetweenSetsSeconds { get; private set; } = TimeSpan.FromSeconds(90);
+    /// <summary>
+    /// Gets Global Set Technique Applied To All Sets.
+    /// </summary>
     public SetTechnique? GlobalSetTechniqueAppliedToAllSets { get; private set; }
+    /// <summary>
+    /// Gets Global Load Override Kg.
+    /// </summary>
     public decimal? GlobalLoadOverrideKg { get; private set; }
+    /// <summary>
+    /// Gets Global Reps Override.
+    /// </summary>
     public int? GlobalRepsOverride { get; private set; }
 
     private readonly List<SetPrescription> _prescriptions = new();
+    /// <summary>
+    /// Gets Prescriptions.
+    /// </summary>
     public IReadOnlyCollection<SetPrescription> Prescriptions => _prescriptions.AsReadOnly();
 
     private SessionExercise() { }
 
+    /// <summary>
+    /// Initializes a new instance of the SessionExercise class.
+    /// </summary>
     public SessionExercise(
         Guid trainingSessionId,
         Guid exerciseId,
@@ -59,6 +101,9 @@ public class SessionExercise : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Update Basic Info.
+    /// </summary>
     public void UpdateBasicInfo(
         int order,
         string? notesForStudent,
@@ -85,6 +130,9 @@ public class SessionExercise : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Set Order.
+    /// </summary>
     public void SetOrder(int newOrder)
     {
         if (newOrder < 1)
@@ -93,6 +141,9 @@ public class SessionExercise : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Add Prescription Set.
+    /// </summary>
     public Guid AddPrescriptionSet(
         int setNumber,
         int? targetRepsMin = null,
@@ -127,6 +178,9 @@ public class SessionExercise : Entity
         return set.Id;
     }
 
+    /// <summary>
+    /// Executes Update Prescription Set.
+    /// </summary>
     public void UpdatePrescriptionSet(
         Guid setPrescriptionId,
         int setNumber,
@@ -166,6 +220,9 @@ public class SessionExercise : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Remove Prescription Set.
+    /// </summary>
     public void RemovePrescriptionSet(Guid setPrescriptionId)
     {
         var set = _prescriptions.FirstOrDefault(p => p.Id == setPrescriptionId);
@@ -174,6 +231,9 @@ public class SessionExercise : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Reorder Sets.
+    /// </summary>
     public void ReorderSets(Dictionary<Guid, int> setOrders)
     {
         if (setOrders == null)

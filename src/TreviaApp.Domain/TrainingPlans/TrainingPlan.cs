@@ -4,36 +4,105 @@ using TreviaApp.Shared.Enums;
 
 namespace TreviaApp.Domain.TrainingPlans;
 
+/// <summary>
+/// Represents the TrainingPlan domain entity.
+/// </summary>
 public class TrainingPlan : AggregateRoot
 {
+    /// <summary>
+    /// Gets Name.
+    /// </summary>
     public string Name { get; private set; } = null!;
+    /// <summary>
+    /// Gets Description.
+    /// </summary>
     public string? Description { get; private set; }
+    /// <summary>
+    /// Gets Instructions Intro.
+    /// </summary>
     public string? InstructionsIntro { get; private set; }
+    /// <summary>
+    /// Gets Notes For Student.
+    /// </summary>
     public string? NotesForStudent { get; private set; }
+    /// <summary>
+    /// Gets Split Type.
+    /// </summary>
     public TrainingSplitType SplitType { get; private set; } = TrainingSplitType.Custom;
+    /// <summary>
+    /// Gets Status.
+    /// </summary>
     public TrainingPlanStatus Status { get; private set; } = TrainingPlanStatus.Draft;
+    /// <summary>
+    /// Gets Visibility.
+    /// </summary>
     public Visibility Visibility { get; private set; } = Visibility.Private;
+    /// <summary>
+    /// Gets Total Weeks.
+    /// </summary>
     public int? TotalWeeks { get; private set; }
+    /// <summary>
+    /// Gets Sessions Per Week.
+    /// </summary>
     public int? SessionsPerWeek { get; private set; }
+    /// <summary>
+    /// Gets Target Volume.
+    /// </summary>
     public decimal? TargetVolume { get; private set; }
+    /// <summary>
+    /// Gets Tags.
+    /// </summary>
     public string? Tags { get; private set; }
+    /// <summary>
+    /// Gets Version.
+    /// </summary>
     public int Version { get; private set; } = 1;
+    /// <summary>
+    /// Gets Is Public Template.
+    /// </summary>
     public bool IsPublicTemplate { get; private set; }
 
+    /// <summary>
+    /// Gets Created By User Id.
+    /// </summary>
     public Guid CreatedByUserId { get; private set; }
+    /// <summary>
+    /// Gets Created By User.
+    /// </summary>
     public AppUser CreatedByUser { get; private set; } = null!;
+    /// <summary>
+    /// Gets Published At.
+    /// </summary>
     public DateTimeOffset? PublishedAt { get; private set; }
+    /// <summary>
+    /// Gets Assigned At.
+    /// </summary>
     public DateTimeOffset? AssignedAt { get; private set; }
+    /// <summary>
+    /// Gets Completed At.
+    /// </summary>
     public DateTimeOffset? CompletedAt { get; private set; }
 
+    /// <summary>
+    /// Gets Assigned To Student Id.
+    /// </summary>
     public Guid? AssignedToStudentId { get; private set; }
+    /// <summary>
+    /// Gets Assigned To Student.
+    /// </summary>
     public AppUser? AssignedToStudent { get; private set; }
 
     private readonly List<TrainingSession> _sessions = new();
+    /// <summary>
+    /// Gets Sessions.
+    /// </summary>
     public IReadOnlyCollection<TrainingSession> Sessions => _sessions.AsReadOnly();
 
     private TrainingPlan() { }
 
+    /// <summary>
+    /// Initializes a new instance of the TrainingPlan class.
+    /// </summary>
     public TrainingPlan(
         Guid createdByUserId,
         string name,
@@ -63,6 +132,9 @@ public class TrainingPlan : AggregateRoot
             throw new ArgumentException("Name too long (> 200).", nameof(name));
     }
 
+    /// <summary>
+    /// Executes Update Basic Info.
+    /// </summary>
     public void UpdateBasicInfo(
         string name,
         string? description,
@@ -97,6 +169,9 @@ public class TrainingPlan : AggregateRoot
         UpdateIsPublicTemplate();
     }
 
+    /// <summary>
+    /// Executes Add Session.
+    /// </summary>
     public Guid AddSession(
         string name,
         string? description = null,
@@ -119,6 +194,9 @@ public class TrainingPlan : AggregateRoot
         return session.Id;
     }
 
+    /// <summary>
+    /// Executes Remove Session.
+    /// </summary>
     public void RemoveSession(Guid sessionId)
     {
         var session = _sessions.FirstOrDefault(s => s.Id == sessionId);
@@ -127,6 +205,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Update Session.
+    /// </summary>
     public void UpdateSession(
         Guid sessionId,
         string name,
@@ -153,6 +234,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Reorder Sessions.
+    /// </summary>
     public void ReorderSessions(Dictionary<Guid, int> sessionOrders)
     {
         if (sessionOrders == null)
@@ -172,6 +256,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Add Exercise To Session.
+    /// </summary>
     public Guid AddExerciseToSession(
         Guid sessionId,
         Guid exerciseId,
@@ -187,6 +274,9 @@ public class TrainingPlan : AggregateRoot
         return sessionExerciseId;
     }
 
+    /// <summary>
+    /// Executes Remove Exercise From Session.
+    /// </summary>
     public void RemoveExerciseFromSession(Guid sessionId, Guid sessionExerciseId)
     {
         var session = _sessions.FirstOrDefault(s => s.Id == sessionId);
@@ -196,6 +286,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Reorder Exercises In Session.
+    /// </summary>
     public void ReorderExercisesInSession(Guid sessionId, Dictionary<Guid, int> exerciseOrders)
     {
         var session = _sessions.FirstOrDefault(s => s.Id == sessionId);
@@ -206,6 +299,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Add Prescription Sets.
+    /// </summary>
     public void AddPrescriptionSets(Guid sessionExerciseId, List<(
         int setNumber,
         int? targetRepsMin,
@@ -243,6 +339,9 @@ public class TrainingPlan : AggregateRoot
         throw new InvalidOperationException($"SessionExercise {sessionExerciseId} not found in this plan.");
     }
 
+    /// <summary>
+    /// Executes Publish.
+    /// </summary>
     public void Publish()
     {
         Status = TrainingPlanStatus.Published;
@@ -253,6 +352,9 @@ public class TrainingPlan : AggregateRoot
         UpdateIsPublicTemplate();
     }
 
+    /// <summary>
+    /// Executes Unpublish.
+    /// </summary>
     public void Unpublish()
     {
         Status = TrainingPlanStatus.Draft;
@@ -261,6 +363,9 @@ public class TrainingPlan : AggregateRoot
         UpdateIsPublicTemplate();
     }
 
+    /// <summary>
+    /// Executes Assign To Student.
+    /// </summary>
     public void AssignToStudent(Guid studentId)
     {
         if (studentId == Guid.Empty)
@@ -274,6 +379,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Pause.
+    /// </summary>
     public void Pause()
     {
         if (Status != TrainingPlanStatus.Active)
@@ -283,6 +391,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Resume.
+    /// </summary>
     public void Resume()
     {
         if (Status != TrainingPlanStatus.Paused)
@@ -292,6 +403,9 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Complete.
+    /// </summary>
     public void Complete()
     {
         Status = TrainingPlanStatus.Completed;
@@ -299,12 +413,18 @@ public class TrainingPlan : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Archive.
+    /// </summary>
     public void Archive()
     {
         Status = TrainingPlanStatus.Archived;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Duplicate.
+    /// </summary>
     public TrainingPlan Duplicate(Guid newOwnerUserId, bool keepStatusDraft = true)
     {
         if (newOwnerUserId == Guid.Empty)

@@ -2,20 +2,38 @@ namespace TreviaApp.Shared.Enums;
 
 using System.ComponentModel;
 
+/// <summary>
+/// Defines the ExerciseStatus enumeration.
+/// </summary>
 public enum ExerciseStatus
 {
-    [Description("Rascunho — criado, não enviado para moderação")]
+    /// <summary>
+    /// Rascunho â€” criado, nÃ£o enviado para moderaÃ§Ã£o
+    /// </summary>
+    [Description("Rascunho â€” criado, nÃ£o enviado para moderaÃ§Ã£o")]
     Draft = 0,
 
-    [Description("Aguardando aprovação do administrador")]
+    /// <summary>
+    /// Aguardando aprovaÃ§Ã£o do administrador
+    /// </summary>
+    [Description("Aguardando aprovaÃ§Ã£o do administrador")]
     AwaitingApproval = 1,
 
-    [Description("Aprovado — disponível globalmente")]
+    /// <summary>
+    /// Aprovado â€” disponÃ­vel globalmente
+    /// </summary>
+    [Description("Aprovado â€” disponÃ­vel globalmente")]
     Approved = 2,
 
-    [Description("Reprovado — com motivo")]
+    /// <summary>
+    /// Reprovado â€” com motivo
+    /// </summary>
+    [Description("Reprovado â€” com motivo")]
     Rejected = 3,
 
+    /// <summary>
+    /// Arquivado
+    /// </summary>
     [Description("Arquivado")]
     Archived = 4
 }

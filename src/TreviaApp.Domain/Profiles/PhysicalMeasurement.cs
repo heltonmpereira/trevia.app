@@ -2,34 +2,97 @@ using TreviaApp.Domain.Abstractions;
 
 namespace TreviaApp.Domain.Profiles;
 
+/// <summary>
+/// Represents the PhysicalMeasurement domain entity.
+/// </summary>
 public class PhysicalMeasurement : Entity
 {
+    /// <summary>
+    /// Gets Profile Id.
+    /// </summary>
     public Guid ProfileId { get; private set; }
+    /// <summary>
+    /// Gets Profile.
+    /// </summary>
     public UserProfile Profile { get; private set; } = null!;
+    /// <summary>
+    /// Gets Measured At.
+    /// </summary>
     public DateTimeOffset MeasuredAt { get; private set; }
 
+    /// <summary>
+    /// Gets Height Cm.
+    /// </summary>
     public decimal? HeightCm { get; private set; }
 
+    /// <summary>
+    /// Gets Waist Cm.
+    /// </summary>
     public decimal? WaistCm { get; private set; }
+    /// <summary>
+    /// Gets Hip Cm.
+    /// </summary>
     public decimal? HipCm { get; private set; }
+    /// <summary>
+    /// Gets Chest Cm.
+    /// </summary>
     public decimal? ChestCm { get; private set; }
+    /// <summary>
+    /// Gets Arm Left Cm.
+    /// </summary>
     public decimal? ArmLeftCm { get; private set; }
+    /// <summary>
+    /// Gets Arm Right Cm.
+    /// </summary>
     public decimal? ArmRightCm { get; private set; }
+    /// <summary>
+    /// Gets Thigh Left Cm.
+    /// </summary>
     public decimal? ThighLeftCm { get; private set; }
+    /// <summary>
+    /// Gets Thigh Right Cm.
+    /// </summary>
     public decimal? ThighRightCm { get; private set; }
+    /// <summary>
+    /// Gets Calf Left Cm.
+    /// </summary>
     public decimal? CalfLeftCm { get; private set; }
+    /// <summary>
+    /// Gets Calf Right Cm.
+    /// </summary>
     public decimal? CalfRightCm { get; private set; }
 
+    /// <summary>
+    /// Gets Body Fat Percent.
+    /// </summary>
     public decimal? BodyFatPercent { get; private set; }
+    /// <summary>
+    /// Gets Water Percent.
+    /// </summary>
     public decimal? WaterPercent { get; private set; }
+    /// <summary>
+    /// Gets Muscle Mass Percent.
+    /// </summary>
     public decimal? MuscleMassPercent { get; private set; }
+    /// <summary>
+    /// Gets Visceral Fat Rating.
+    /// </summary>
     public decimal? VisceralFatRating { get; private set; }
+    /// <summary>
+    /// Gets Bmi Kg M2.
+    /// </summary>
     public decimal? BmiKgM2 { get; private set; }
 
+    /// <summary>
+    /// Gets Note.
+    /// </summary>
     public string? Note { get; private set; }
 
     private PhysicalMeasurement() { }
 
+    /// <summary>
+    /// Initializes a new instance of the PhysicalMeasurement class.
+    /// </summary>
     public PhysicalMeasurement(
         Guid profileId,
         DateTimeOffset measuredAt,

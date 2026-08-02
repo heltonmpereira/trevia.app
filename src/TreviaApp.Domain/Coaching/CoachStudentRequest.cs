@@ -4,25 +4,67 @@ using TreviaApp.Shared.Enums;
 
 namespace TreviaApp.Domain.Coaching;
 
+/// <summary>
+/// Represents the CoachStudentRequest domain entity.
+/// </summary>
 public class CoachStudentRequest : AggregateRoot
 {
+    /// <summary>
+    /// Gets Coach Id.
+    /// </summary>
     public Guid CoachId { get; private set; }
+    /// <summary>
+    /// Gets Coach.
+    /// </summary>
     public AppUser Coach { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Student Id.
+    /// </summary>
     public Guid StudentId { get; private set; }
+    /// <summary>
+    /// Gets Student.
+    /// </summary>
     public AppUser Student { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Direction.
+    /// </summary>
     public CoachInviteDirection Direction { get; private set; }
+    /// <summary>
+    /// Gets Status.
+    /// </summary>
     public CoachRequestStatus Status { get; private set; } = CoachRequestStatus.Pending;
 
+    /// <summary>
+    /// Gets Message.
+    /// </summary>
     public string? Message { get; private set; }
+    /// <summary>
+    /// Gets Coach Notes Internal.
+    /// </summary>
     public string? CoachNotesInternal { get; private set; }
+    /// <summary>
+    /// Gets Rejection Reason.
+    /// </summary>
     public string? RejectionReason { get; private set; }
 
+    /// <summary>
+    /// Gets Expires At.
+    /// </summary>
     public DateTimeOffset ExpiresAt { get; private set; }
+    /// <summary>
+    /// Gets Responded At.
+    /// </summary>
     public DateTimeOffset? RespondedAt { get; private set; }
+    /// <summary>
+    /// Gets Responded By User Id.
+    /// </summary>
     public Guid? RespondedByUserId { get; private set; }
 
+    /// <summary>
+    /// Gets Granted Permissions On Accept.
+    /// </summary>
     public CoachPermissions GrantedPermissionsOnAccept { get; private set; } =
         CoachPermissions.CanViewWeightHistory |
         CoachPermissions.CanViewBodyMeasurements |
@@ -32,6 +74,9 @@ public class CoachStudentRequest : AggregateRoot
 
     private CoachStudentRequest() { }
 
+    /// <summary>
+    /// Initializes a new instance of the CoachStudentRequest class.
+    /// </summary>
     public CoachStudentRequest(
         Guid coachId,
         Guid studentId,
@@ -58,8 +103,14 @@ public class CoachStudentRequest : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Gets Is Expired.
+    /// </summary>
     public bool IsExpired => DateTimeOffset.UtcNow > ExpiresAt && Status == CoachRequestStatus.Pending;
 
+    /// <summary>
+    /// Executes Accept.
+    /// </summary>
     public void Accept(Guid acceptedByUserId)
     {
         if (Status != CoachRequestStatus.Pending)
@@ -75,6 +126,9 @@ public class CoachStudentRequest : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Reject.
+    /// </summary>
     public void Reject(Guid rejectedByUserId, string? reason = null)
     {
         if (Status != CoachRequestStatus.Pending)
@@ -91,6 +145,9 @@ public class CoachStudentRequest : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Cancel.
+    /// </summary>
     public void Cancel(Guid cancelledByUserId)
     {
         if (Status != CoachRequestStatus.Pending)
@@ -104,6 +161,9 @@ public class CoachStudentRequest : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Set Coach Notes Internal.
+    /// </summary>
     public void SetCoachNotesInternal(string? notes)
     {
         if (notes != null && notes.Length > 1000)

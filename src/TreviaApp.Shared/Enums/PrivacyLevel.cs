@@ -2,14 +2,26 @@ using System.ComponentModel;
 
 namespace TreviaApp.Shared.Enums;
 
+/// <summary>
+/// Defines the PrivacyLevel enumeration.
+/// </summary>
 public enum PrivacyLevel
 {
-    [Description("Privado — apenas dono/admin/trainer vinculado")]
+    /// <summary>
+    /// Privado â€” apenas dono/admin/trainer vinculado
+    /// </summary>
+    [Description("Privado â€” apenas dono/admin/trainer vinculado")]
     Private = 0,
 
-    [Description("Parcial — amigos/trainer")]
+    /// <summary>
+    /// Parcial â€” amigos/trainer
+    /// </summary>
+    [Description("Parcial â€” amigos/trainer")]
     FriendsOnly = 1,
 
-    [Description("Público — qualquer usuário logado")]
+    /// <summary>
+    /// PÃºblico â€” qualquer usuÃ¡rio logado
+    /// </summary>
+    [Description("PÃºblico â€” qualquer usuÃ¡rio logado")]
     Public = 2
 }

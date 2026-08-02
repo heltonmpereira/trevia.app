@@ -2,24 +2,60 @@ using TreviaApp.Domain.Abstractions;
 
 namespace TreviaApp.Domain.TrainingPlans;
 
+/// <summary>
+/// Represents the TrainingSession domain entity.
+/// </summary>
 public class TrainingSession : Entity
 {
+    /// <summary>
+    /// Gets Training Plan Id.
+    /// </summary>
     public Guid TrainingPlanId { get; private set; }
+    /// <summary>
+    /// Gets Training Plan.
+    /// </summary>
     public TrainingPlan TrainingPlan { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Name.
+    /// </summary>
     public string Name { get; private set; } = null!;
+    /// <summary>
+    /// Gets Order.
+    /// </summary>
     public int Order { get; private set; }
+    /// <summary>
+    /// Gets Description.
+    /// </summary>
     public string? Description { get; private set; }
+    /// <summary>
+    /// Gets Suggested Day Of Week.
+    /// </summary>
     public DayOfWeek? SuggestedDayOfWeek { get; private set; }
+    /// <summary>
+    /// Gets Estimated Duration Min.
+    /// </summary>
     public TimeSpan? EstimatedDurationMin { get; private set; }
+    /// <summary>
+    /// Gets Coach Notes Internal.
+    /// </summary>
     public string? CoachNotesInternal { get; private set; }
+    /// <summary>
+    /// Gets Focus.
+    /// </summary>
     public string? Focus { get; private set; }
 
     private readonly List<SessionExercise> _exercises = new();
+    /// <summary>
+    /// Gets Exercises.
+    /// </summary>
     public IReadOnlyCollection<SessionExercise> Exercises => _exercises.AsReadOnly();
 
     private TrainingSession() { }
 
+    /// <summary>
+    /// Initializes a new instance of the TrainingSession class.
+    /// </summary>
     public TrainingSession(
         Guid trainingPlanId,
         string name,
@@ -56,6 +92,9 @@ public class TrainingSession : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Update.
+    /// </summary>
     public void Update(
         string name,
         int order,
@@ -88,6 +127,9 @@ public class TrainingSession : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Set Order.
+    /// </summary>
     public void SetOrder(int newOrder)
     {
         if (newOrder < 1)
@@ -96,6 +138,9 @@ public class TrainingSession : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Add Exercise.
+    /// </summary>
     public Guid AddExercise(
         Guid exerciseId,
         int order,
@@ -117,6 +162,9 @@ public class TrainingSession : Entity
         return sessionExercise.Id;
     }
 
+    /// <summary>
+    /// Executes Remove Exercise.
+    /// </summary>
     public void RemoveExercise(Guid sessionExerciseId)
     {
         var exercise = _exercises.FirstOrDefault(e => e.Id == sessionExerciseId);
@@ -125,6 +173,9 @@ public class TrainingSession : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Reorder Exercises.
+    /// </summary>
     public void ReorderExercises(Dictionary<Guid, int> orders)
     {
         if (orders == null)
@@ -144,6 +195,9 @@ public class TrainingSession : Entity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Find Session Exercise.
+    /// </summary>
     public SessionExercise? FindSessionExercise(Guid sessionExerciseId)
         => _exercises.FirstOrDefault(e => e.Id == sessionExerciseId);
 

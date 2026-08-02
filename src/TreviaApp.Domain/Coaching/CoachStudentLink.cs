@@ -4,27 +4,66 @@ using TreviaApp.Shared.Enums;
 
 namespace TreviaApp.Domain.Coaching;
 
+/// <summary>
+/// Represents the CoachStudentLink domain entity.
+/// </summary>
 public class CoachStudentLink : AggregateRoot
 {
+    /// <summary>
+    /// Gets Coach Id.
+    /// </summary>
     public Guid CoachId { get; private set; }
+    /// <summary>
+    /// Gets Coach.
+    /// </summary>
     public AppUser Coach { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Student Id.
+    /// </summary>
     public Guid StudentId { get; private set; }
+    /// <summary>
+    /// Gets Student.
+    /// </summary>
     public AppUser Student { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets Permissions.
+    /// </summary>
     public CoachPermissions Permissions { get; private set; }
 
+    /// <summary>
+    /// Gets Started At.
+    /// </summary>
     public DateTimeOffset StartedAt { get; private set; }
+    /// <summary>
+    /// Gets Ended At.
+    /// </summary>
     public DateTimeOffset? EndedAt { get; private set; }
+    /// <summary>
+    /// Gets End Reason.
+    /// </summary>
     public CoachRelationshipEndReason? EndReason { get; private set; }
+    /// <summary>
+    /// Gets End Reason Notes.
+    /// </summary>
     public string? EndReasonNotes { get; private set; }
 
+    /// <summary>
+    /// Gets Is Active.
+    /// </summary>
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// Gets Originating Coach Request Id.
+    /// </summary>
     public Guid? OriginatingCoachRequestId { get; private set; }
 
     private CoachStudentLink() { }
 
+    /// <summary>
+    /// Initializes a new instance of the CoachStudentLink class.
+    /// </summary>
     public CoachStudentLink(
         Guid coachId,
         Guid studentId,
@@ -49,6 +88,9 @@ public class CoachStudentLink : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Update Permissions.
+    /// </summary>
     public void UpdatePermissions(CoachPermissions newPermissions, Guid updatedByCoachId)
     {
         if (!IsActive)
@@ -60,11 +102,17 @@ public class CoachStudentLink : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Has Permission.
+    /// </summary>
     public bool HasPermission(CoachPermissions permission)
     {
         return Permissions.HasFlag(permission);
     }
 
+    /// <summary>
+    /// Executes Grant Permission.
+    /// </summary>
     public void GrantPermission(CoachPermissions permission, Guid updatedByCoachId)
     {
         if (!IsActive)
@@ -76,6 +124,9 @@ public class CoachStudentLink : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes Revoke Permission.
+    /// </summary>
     public void RevokePermission(CoachPermissions permission, Guid updatedByCoachId)
     {
         if (!IsActive)
@@ -87,6 +138,9 @@ public class CoachStudentLink : AggregateRoot
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Executes End Relationship.
+    /// </summary>
     public void EndRelationship(Guid endedByUserId, CoachRelationshipEndReason reason, string? notes = null)
     {
         if (!IsActive)
