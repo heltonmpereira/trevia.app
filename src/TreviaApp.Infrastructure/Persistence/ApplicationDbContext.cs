@@ -11,6 +11,7 @@ using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
 using TreviaApp.Domain.Profiles;
 using TreviaApp.Domain.TrainingPlans;
+using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Infrastructure.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
@@ -34,6 +35,10 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<SetPrescription> SetPrescriptions => Set<SetPrescription>();
     public DbSet<CoachStudentRequest> CoachStudentRequests => Set<CoachStudentRequest>();
     public DbSet<CoachStudentLink> CoachStudentLinks => Set<CoachStudentLink>();
+    public DbSet<WorkoutSession> WorkoutSessions => Set<WorkoutSession>();
+    public DbSet<WorkoutExercise> WorkoutExercises => Set<WorkoutExercise>();
+    public DbSet<WorkoutSet> WorkoutSets => Set<WorkoutSet>();
+    public DbSet<WorkoutPause> WorkoutPauses => Set<WorkoutPause>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -78,6 +83,10 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         builder.Entity<TrainingPlan>().HasQueryFilter(tp => !tp.IsDeleted);
         builder.Entity<CoachStudentRequest>().HasQueryFilter(r => !r.IsDeleted);
         builder.Entity<CoachStudentLink>().HasQueryFilter(l => !l.IsDeleted);
+        builder.Entity<WorkoutSession>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<WorkoutExercise>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<WorkoutSet>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<WorkoutPause>().HasQueryFilter(w => !w.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

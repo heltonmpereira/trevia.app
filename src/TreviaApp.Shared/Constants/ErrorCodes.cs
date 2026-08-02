@@ -53,4 +53,19 @@ public static class ErrorCodes
     public const string CoachInviteNotAuthorizedToCancel = nameof(CoachInviteNotAuthorizedToCancel);
     public const string CoachNoActiveLinkToAssignPlan = nameof(CoachNoActiveLinkToAssignPlan);
     public const string CoachInviteDuplicatePending = nameof(CoachInviteDuplicatePending);
+
+    public const string WorkoutSessionNotFound = nameof(WorkoutSessionNotFound);
+    public const string WorkoutExerciseNotFound = nameof(WorkoutExerciseNotFound);
+    public const string WorkoutSetNotFound = nameof(WorkoutSetNotFound);
+    public const string WorkoutTrainingSessionNotFound = nameof(WorkoutTrainingSessionNotFound);
+    public const string WorkoutTrainingPlanNotAssignedToStudent = nameof(WorkoutTrainingPlanNotAssignedToStudent);
+    public const string WorkoutCannotStartNotOwner = nameof(WorkoutCannotStartNotOwner);
+    public const string WorkoutInvalidStatusTransition = nameof(WorkoutInvalidStatusTransition);
+    public const string WorkoutAlreadyHasActiveSession = nameof(WorkoutAlreadyHasActiveSession);
+    public const string WorkoutSetAlreadyLogged = nameof(WorkoutSetAlreadyLogged);
+    public const string WorkoutExerciseAlreadySkipped = nameof(WorkoutExerciseAlreadySkipped);
+    public const string WorkoutNotInProgressOrPaused = nameof(WorkoutNotInProgressOrPaused);
+    public const string WorkoutSessionAlreadyFinished = nameof(WorkoutSessionAlreadyFinished);
+    public const string WorkoutRatingInvalidForInterrupted = nameof(WorkoutRatingInvalidForInterrupted);
+    public const string WorkoutWeekNumberInvalid = nameof(WorkoutWeekNumberInvalid);
 }

@@ -21,4 +21,6 @@ public static class AppPolicies
     public const string CanManageCoachRelationships = nameof(CanManageCoachRelationships);
     public const string IsLinkedStudent = nameof(IsLinkedStudent);
     public const string IsLinkedTrainerOrAdmin = nameof(IsLinkedTrainerOrAdmin);
+    public const string CanManageOwnWorkouts = nameof(CanManageOwnWorkouts);
+    public const string CanViewStudentWorkouts = nameof(CanViewStudentWorkouts);
 }
