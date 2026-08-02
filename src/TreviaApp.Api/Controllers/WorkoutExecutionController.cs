@@ -178,6 +178,27 @@ public class WorkoutExecutionController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("students/{studentId:guid}/sessions")]
+    [ProducesResponseType(typeof(WorkoutSessionsPagedResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetStudentSessions(
+        [FromRoute] Guid studentId,
+        [FromQuery] WorkoutStatus? statusFilter = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? trainingPlanId = null,
+        [FromQuery] DateTimeOffset? from = null,
+        [FromQuery] DateTimeOffset? to = null,
+        CancellationToken ct = default)
+    {
+        var userId = CurrentUser.UserId!.Value;
+        var isStaff = CurrentUser.IsInRole(AppRoles.Administrator) || CurrentUser.IsInRole(AppRoles.GymManager);
+        var q = new GetStudentWorkoutSessionsQuery(userId, studentId, isStaff, statusFilter, page, pageSize, trainingPlanId, from, to);
+        var result = await Sender.Send(q, ct);
+        return Ok(result);
+    }
+
     [HttpGet("sessions/current-active")]
     [ProducesResponseType(typeof(WorkoutSessionDetailResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -186,6 +207,20 @@ public class WorkoutExecutionController : ApiControllerBase
     {
         var userId = CurrentUser.UserId!.Value;
         var result = await Sender.Send(new GetCurrentActiveWorkoutSessionQuery(userId), ct);
+        if (result == null) return NoContent();
+        return Ok(result);
+    }
+
+    [HttpGet("students/{studentId:guid}/sessions/current-active")]
+    [ProducesResponseType(typeof(WorkoutSessionDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetStudentCurrentActive([FromRoute] Guid studentId, CancellationToken ct = default)
+    {
+        var userId = CurrentUser.UserId!.Value;
+        var isStaff = CurrentUser.IsInRole(AppRoles.Administrator) || CurrentUser.IsInRole(AppRoles.GymManager);
+        var result = await Sender.Send(new GetStudentCurrentActiveWorkoutSessionQuery(userId, studentId, isStaff), ct);
         if (result == null) return NoContent();
         return Ok(result);
     }
@@ -199,6 +234,22 @@ public class WorkoutExecutionController : ApiControllerBase
     {
         var userId = CurrentUser.UserId!.Value;
         var result = await Sender.Send(new GetWorkoutSessionByIdQuery(userId, workoutSessionId), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("students/{studentId:guid}/sessions/{workoutSessionId:guid}")]
+    [ProducesResponseType(typeof(WorkoutSessionDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetStudentSessionById(
+        [FromRoute] Guid studentId,
+        [FromRoute] Guid workoutSessionId,
+        CancellationToken ct = default)
+    {
+        var userId = CurrentUser.UserId!.Value;
+        var isStaff = CurrentUser.IsInRole(AppRoles.Administrator) || CurrentUser.IsInRole(AppRoles.GymManager);
+        var result = await Sender.Send(new GetStudentWorkoutSessionByIdQuery(userId, studentId, workoutSessionId, isStaff), ct);
         return Ok(result);
     }
 }
