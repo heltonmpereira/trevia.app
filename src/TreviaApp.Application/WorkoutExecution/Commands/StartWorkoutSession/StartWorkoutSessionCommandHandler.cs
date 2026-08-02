@@ -4,15 +4,15 @@ using Microsoft.Extensions.Logging;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Application.WorkoutExecution.Mappings;
 using TreviaApp.Contracts.WorkoutExecution.Responses;
-using TreviaApp.Domain.Abstractions;
+using TreviaApp.Domain.Exceptions;
+using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Shared.Constants;
 using TreviaApp.Shared.Enums;
-using TreviaApp.Shared.Errors;
 
 namespace TreviaApp.Application.WorkoutExecution.Commands.StartWorkoutSession;
 
-public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWorkoutSessionCommand, Result<WorkoutSessionSummaryResponse>>
+public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWorkoutSessionCommand, WorkoutSessionSummaryResponse>
 {
     private readonly IApplicationDbContext _db;
     private readonly ILogger<StartWorkoutSessionCommandHandler> _logger;
@@ -23,10 +23,10 @@ public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWor
         _logger = logger;
     }
 
-    public async Task<Result<WorkoutSessionSummaryResponse>> Handle(StartWorkoutSessionCommand request, CancellationToken cancellationToken)
+    public async Task<WorkoutSessionSummaryResponse> Handle(StartWorkoutSessionCommand request, CancellationToken cancellationToken)
     {
         if (request.WeekNumberInPlan < 1)
-            return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutWeekNumberInvalid));
+            throw new DomainException("Número da semana inválido.", ErrorCodes.WorkoutWeekNumberInvalid);
 
         var sessionPrescription = await _db.Set<TrainingSession>()
             .Include(s => s.TrainingPlan)
@@ -34,21 +34,21 @@ public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWor
             .FirstOrDefaultAsync(s => s.Id == request.TrainingSessionId, cancellationToken);
 
         if (sessionPrescription == null)
-            return Result.Failure<WorkoutSessionSummaryResponse>(Error.NotFound(ErrorCodes.WorkoutTrainingSessionNotFound));
+            throw new DomainException("Sessão de treino (prescrição) não encontrada.", ErrorCodes.WorkoutTrainingSessionNotFound);
 
         var plan = sessionPrescription.TrainingPlan;
         if (plan != null && plan.AssignedToStudentId.HasValue && plan.AssignedToStudentId.Value != request.CurrentUserId)
-            return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutTrainingPlanNotAssignedToStudent));
+            throw new DomainException("Ficha não atribuída a este aluno.", ErrorCodes.WorkoutTrainingPlanNotAssignedToStudent);
 
         if (plan != null && plan.AssignedToStudentId is null && plan.CreatedByUserId != request.CurrentUserId)
-            return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+            throw new DomainException("Apenas o dono da ficha pode iniciar uma sessão.", ErrorCodes.WorkoutCannotStartNotOwner);
 
         var alreadyActive = await _db.Set<WorkoutSession>()
             .AnyAsync(s => s.StudentId == request.CurrentUserId
                            && (s.Status == WorkoutStatus.InProgress || s.Status == WorkoutStatus.Paused),
                 cancellationToken);
         if (alreadyActive)
-            return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutAlreadyHasActiveSession));
+            throw new DomainException("Você já possui uma sessão de treino ativa. Finalize-a antes de iniciar outra.", ErrorCodes.WorkoutAlreadyHasActiveSession);
 
         var wk = new WorkoutSession(
             request.CurrentUserId,
@@ -94,7 +94,7 @@ public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWor
         _logger.LogInformation("Atualização de séries de prescrição concluída para WorkoutSession {Id}.", wk.Id);
 
         var agg = wk.AggregateWorkoutSessionTotals();
-        return Result.Success(new WorkoutSessionSummaryResponse(
+        return new WorkoutSessionSummaryResponse(
             wk.Id,
             wk.TrainingPlanId,
             plan?.Name,
@@ -109,6 +109,6 @@ public sealed class StartWorkoutSessionCommandHandler : IRequestHandler<StartWor
             wk.WeekNumberInPlan,
             agg.excCount,
             agg.completedSets,
-            agg.totalVolume));
+            agg.totalVolume);
     }
 }

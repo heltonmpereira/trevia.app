@@ -1,12 +1,13 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Application.Abstractions.Messaging;
 using TreviaApp.Contracts.Common;
 using TreviaApp.Contracts.WorkoutExecution.Responses;
-using TreviaApp.Domain.Abstractions;
+using TreviaApp.Domain.Exceptions;
 using TreviaApp.Domain.WorkoutExecution;
+using TreviaApp.Shared.Constants;
 using TreviaApp.Shared.Enums;
-using TreviaApp.Shared.Errors;
 using TreviaApp.Application.WorkoutExecution.Mappings;
 using static TreviaApp.Application.WorkoutExecution.Commands.ExerciseActions;
 
@@ -22,20 +23,20 @@ public static class Queries
             Guid? TrainingPlanId = null,
             DateTimeOffset? From = null,
             DateTimeOffset? To = null)
-        : IRequest<Result<WorkoutSessionsPagedResponse>>;
+        : IQuery<WorkoutSessionsPagedResponse>;
 
     public sealed record GetCurrentActiveWorkoutSessionQuery(Guid CurrentUserId)
-        : IRequest<Result<WorkoutSessionDetailResponse?>>;
+        : IQuery<WorkoutSessionDetailResponse?>;
 
     public sealed record GetWorkoutSessionByIdQuery(Guid CurrentUserId, Guid WorkoutSessionId)
-        : IRequest<Result<WorkoutSessionDetailResponse>>;
+        : IQuery<WorkoutSessionDetailResponse>;
 
-    public sealed class GetMyWorkoutSessionsQueryHandler : IRequestHandler<GetMyWorkoutSessionsQuery, Result<WorkoutSessionsPagedResponse>>
+    public sealed class GetMyWorkoutSessionsQueryHandler : IRequestHandler<GetMyWorkoutSessionsQuery, WorkoutSessionsPagedResponse>
     {
         private readonly IApplicationDbContext _db;
         public GetMyWorkoutSessionsQueryHandler(IApplicationDbContext db) { _db = db; }
 
-        public async Task<Result<WorkoutSessionsPagedResponse>> Handle(GetMyWorkoutSessionsQuery q, CancellationToken ct)
+        public async Task<WorkoutSessionsPagedResponse> Handle(GetMyWorkoutSessionsQuery q, CancellationToken ct)
         {
             var query = _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
@@ -83,16 +84,16 @@ public static class Queries
                 TotalCount = total,
                 TotalPages = (int)Math.Ceiling(total / (double)Math.Max(1, q.PageSize))
             };
-            return Result.Success(response);
+            return response;
         }
     }
 
-    public sealed class GetCurrentActiveWorkoutSessionQueryHandler : IRequestHandler<GetCurrentActiveWorkoutSessionQuery, Result<WorkoutSessionDetailResponse?>>
+    public sealed class GetCurrentActiveWorkoutSessionQueryHandler : IRequestHandler<GetCurrentActiveWorkoutSessionQuery, WorkoutSessionDetailResponse?>
     {
         private readonly IApplicationDbContext _db;
         public GetCurrentActiveWorkoutSessionQueryHandler(IApplicationDbContext db) { _db = db; }
 
-        public async Task<Result<WorkoutSessionDetailResponse?>> Handle(GetCurrentActiveWorkoutSessionQuery q, CancellationToken ct)
+        public async Task<WorkoutSessionDetailResponse?> Handle(GetCurrentActiveWorkoutSessionQuery q, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
@@ -102,17 +103,17 @@ public static class Queries
                 .FirstOrDefaultAsync(w => w.StudentId == q.CurrentUserId
                     && (w.Status == WorkoutStatus.InProgress || w.Status == WorkoutStatus.Paused), ct);
 
-            if (ws == null) return Result.Success<WorkoutSessionDetailResponse?>(null);
-            return Result.Success<WorkoutSessionDetailResponse?>(await BuildDetail(ws, _db, ct));
+            if (ws == null) return null;
+            return await BuildDetail(ws, _db, ct);
         }
     }
 
-    public sealed class GetWorkoutSessionByIdQueryHandler : IRequestHandler<GetWorkoutSessionByIdQuery, Result<WorkoutSessionDetailResponse>>
+    public sealed class GetWorkoutSessionByIdQueryHandler : IRequestHandler<GetWorkoutSessionByIdQuery, WorkoutSessionDetailResponse>
     {
         private readonly IApplicationDbContext _db;
         public GetWorkoutSessionByIdQueryHandler(IApplicationDbContext db) { _db = db; }
 
-        public async Task<Result<WorkoutSessionDetailResponse>> Handle(GetWorkoutSessionByIdQuery q, CancellationToken ct)
+        public async Task<WorkoutSessionDetailResponse> Handle(GetWorkoutSessionByIdQuery q, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
@@ -121,11 +122,11 @@ public static class Queries
                 .Include(w => w.TrainingPlan)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.Id == q.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSessionDetailResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != q.CurrentUserId)
-                return Result.Failure<WorkoutSessionDetailResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono pode visualizar esta sessão.", ErrorCodes.WorkoutCannotStartNotOwner);
 
-            return Result.Success(await BuildDetail(ws, _db, ct));
+            return await BuildDetail(ws, _db, ct);
         }
     }
 

@@ -92,7 +92,7 @@ public class WorkoutSession : AggregateRoot
         if (Status != WorkoutStatus.Paused)
             throw new InvalidOperationException($"Can only resume when Paused. Current: {Status}.");
 
-        var latestOpenPause = _pauses.LastOrDefault(p => !p.EndedAt == null || p.EndedAt is null);
+        var latestOpenPause = _pauses.LastOrDefault(p => !p.EndedAt.HasValue);
         latestOpenPause?.EndNow();
 
         Status = WorkoutStatus.InProgress;
@@ -104,11 +104,8 @@ public class WorkoutSession : AggregateRoot
         if (Status != WorkoutStatus.InProgress && Status != WorkoutStatus.Paused)
             throw new InvalidOperationException($"Can only finish InProgress/Paused sessions. Current: {Status}.");
 
-        if (generalNotes = generalNotes?.Length switch
-        {
-            > 2000 => throw new ArgumentException("GeneralNotes too long (> 2000).", nameof(generalNotes)),
-            _ => generalNotes
-        };
+        if (generalNotes != null && generalNotes.Length > 2000)
+            throw new ArgumentException("GeneralNotes too long (> 2000).", nameof(generalNotes));
 
         if (caloriesBurned < 0)
             throw new ArgumentOutOfRangeException(nameof(caloriesBurned));

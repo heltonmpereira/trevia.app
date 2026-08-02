@@ -2,13 +2,12 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Application.Abstractions.Messaging;
 using TreviaApp.Contracts.WorkoutExecution.Responses;
-using TreviaApp.Domain.Abstractions;
+using TreviaApp.Domain.Exceptions;
 using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Shared.Constants;
 using TreviaApp.Shared.Enums;
-using TreviaApp.Shared.Errors;
-using TreviaApp.Application.WorkoutExecution.Commands;
 using static TreviaApp.Application.WorkoutExecution.Commands.PauseResumeFinish;
 
 namespace TreviaApp.Application.WorkoutExecution.Commands;
@@ -20,14 +19,14 @@ public static class ExerciseActions
             Guid WorkoutSessionId,
             Guid WorkoutExerciseId,
             string? SkipReason = null)
-        : IRequest<Result<WorkoutExerciseResponse>>;
+        : ICommand<WorkoutExerciseResponse>;
 
     public sealed record AddExtraSetToExerciseCommand(
             Guid CurrentUserId,
             Guid WorkoutSessionId,
             Guid WorkoutExerciseId,
             int? SuggestedSetNumber = null)
-        : IRequest<Result<WorkoutSetResponse>>;
+        : ICommand<WorkoutSetResponse>;
 
     public sealed record LogWorkoutSetCommand(
             Guid CurrentUserId,
@@ -45,9 +44,9 @@ public static class ExerciseActions
             bool Completed = true,
             SetRating? DifficultyRating = null,
             string? Notes = null)
-        : IRequest<Result<WorkoutSetResponse>>;
+        : ICommand<WorkoutSetResponse>;
 
-    public sealed class SkipWorkoutExerciseCommandHandler : IRequestHandler<SkipWorkoutExerciseCommand, Result<WorkoutExerciseResponse>>
+    public sealed class SkipWorkoutExerciseCommandHandler : IRequestHandler<SkipWorkoutExerciseCommand, WorkoutExerciseResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<SkipWorkoutExerciseCommandHandler> _logger;
@@ -58,21 +57,21 @@ public static class ExerciseActions
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutExerciseResponse>> Handle(SkipWorkoutExerciseCommand request, CancellationToken ct)
+        public async Task<WorkoutExerciseResponse> Handle(SkipWorkoutExerciseCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutExerciseResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutExerciseResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode pular exercícios.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status != WorkoutStatus.InProgress && ws.Status != WorkoutStatus.Paused)
-                return Result.Failure<WorkoutExerciseResponse>(Error.Failure(ErrorCodes.WorkoutNotInProgressOrPaused));
+                throw new DomainException("Você só pode pular exercícios durante o treino.", ErrorCodes.WorkoutNotInProgressOrPaused);
 
             var wex = ws.FindExercise(request.WorkoutExerciseId);
-            if (wex == null) return Result.Failure<WorkoutExerciseResponse>(Error.NotFound(ErrorCodes.WorkoutExerciseNotFound));
+            if (wex == null) throw new DomainException("Exercício da sessão não encontrado.", ErrorCodes.WorkoutExerciseNotFound);
             if (wex.IsSkipped)
-                return Result.Failure<WorkoutExerciseResponse>(Error.Failure(ErrorCodes.WorkoutExerciseAlreadySkipped));
+                throw new DomainException("Este exercício já foi marcado como pulado.", ErrorCodes.WorkoutExerciseAlreadySkipped);
 
             wex.Skip(request.SkipReason);
             await _db.SaveChangesAsync(ct);
@@ -80,11 +79,11 @@ public static class ExerciseActions
 
             var ex = await _db.Set<TreviaApp.Domain.Exercises.Exercise>()
                 .FirstOrDefaultAsync(e => e.Id == wex.ExerciseId, ct);
-            return Result.Success(MapExercise(wex, ex?.Name));
+            return MapExercise(wex, ex?.Name);
         }
     }
 
-    public sealed class AddExtraSetToExerciseCommandHandler : IRequestHandler<AddExtraSetToExerciseCommand, Result<WorkoutSetResponse>>
+    public sealed class AddExtraSetToExerciseCommandHandler : IRequestHandler<AddExtraSetToExerciseCommand, WorkoutSetResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<AddExtraSetToExerciseCommandHandler> _logger;
@@ -95,28 +94,28 @@ public static class ExerciseActions
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutSetResponse>> Handle(AddExtraSetToExerciseCommand request, CancellationToken ct)
+        public async Task<WorkoutSetResponse> Handle(AddExtraSetToExerciseCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSetResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutSetResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode adicionar séries.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status != WorkoutStatus.InProgress && ws.Status != WorkoutStatus.Paused)
-                return Result.Failure<WorkoutSetResponse>(Error.Failure(ErrorCodes.WorkoutNotInProgressOrPaused));
+                throw new DomainException("Você só pode adicionar séries durante o treino.", ErrorCodes.WorkoutNotInProgressOrPaused);
 
             var wex = ws.FindExercise(request.WorkoutExerciseId);
-            if (wex == null) return Result.Failure<WorkoutSetResponse>(Error.NotFound(ErrorCodes.WorkoutExerciseNotFound));
+            if (wex == null) throw new DomainException("Exercício da sessão não encontrado.", ErrorCodes.WorkoutExerciseNotFound);
 
             var extra = wex.AddExtraSet(request.SuggestedSetNumber ?? 0);
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("SaveChangesAsync explícito concluído: AddExtraSet Ws={Ws} SetId={SetId}.", ws.Id, extra.Id);
-            return Result.Success(MapSet(extra));
+            return MapSet(extra);
         }
     }
 
-    public sealed class LogWorkoutSetCommandHandler : IRequestHandler<LogWorkoutSetCommand, Result<WorkoutSetResponse>>
+    public sealed class LogWorkoutSetCommandHandler : IRequestHandler<LogWorkoutSetCommand, WorkoutSetResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<LogWorkoutSetCommandHandler> _logger;
@@ -127,22 +126,22 @@ public static class ExerciseActions
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutSetResponse>> Handle(LogWorkoutSetCommand request, CancellationToken ct)
+        public async Task<WorkoutSetResponse> Handle(LogWorkoutSetCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSetResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutSetResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode registrar séries.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status != WorkoutStatus.InProgress && ws.Status != WorkoutStatus.Paused)
-                return Result.Failure<WorkoutSetResponse>(Error.Failure(ErrorCodes.WorkoutNotInProgressOrPaused));
+                throw new DomainException("Você só pode registrar séries durante o treino.", ErrorCodes.WorkoutNotInProgressOrPaused);
 
             var wex = ws.FindExercise(request.WorkoutExerciseId);
-            if (wex == null) return Result.Failure<WorkoutSetResponse>(Error.NotFound(ErrorCodes.WorkoutExerciseNotFound));
+            if (wex == null) throw new DomainException("Exercício da sessão não encontrado.", ErrorCodes.WorkoutExerciseNotFound);
 
             var set = wex.FindSet(request.WorkoutSetId);
-            if (set == null) return Result.Failure<WorkoutSetResponse>(Error.NotFound(ErrorCodes.WorkoutSetNotFound));
+            if (set == null) throw new DomainException("Série não encontrada no exercício.", ErrorCodes.WorkoutSetNotFound);
 
             TimeSpan? duration = request.ActualDurationSeconds.HasValue
                 ? TimeSpan.FromSeconds(request.ActualDurationSeconds.Value)
@@ -165,12 +164,12 @@ public static class ExerciseActions
             }
             catch (ArgumentException ex)
             {
-                return Result.Failure<WorkoutSetResponse>(Error.Failure(ErrorCodes.WorkoutSetAlreadyLogged, ex.Message));
+                throw new DomainException("Dados inválidos para a série.", ErrorCodes.WorkoutSetAlreadyLogged, ex.Message);
             }
 
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("SaveChangesAsync explícito concluído: LogWorkoutSet SetId={SetId}.", set.Id);
-            return Result.Success(MapSet(set));
+            return MapSet(set);
         }
     }
 

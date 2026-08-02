@@ -2,23 +2,24 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TreviaApp.Application.Abstractions.Data;
+using TreviaApp.Application.Abstractions.Messaging;
+using TreviaApp.Application.WorkoutExecution.Mappings;
 using TreviaApp.Contracts.WorkoutExecution.Responses;
-using TreviaApp.Domain.Abstractions;
+using TreviaApp.Domain.Exceptions;
+using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Shared.Constants;
 using TreviaApp.Shared.Enums;
-using TreviaApp.Shared.Errors;
-using TreviaApp.Application.WorkoutExecution.Mappings;
 
 namespace TreviaApp.Application.WorkoutExecution.Commands;
 
 public static class PauseResumeFinish
 {
     public sealed record PauseWorkoutSessionCommand(Guid CurrentUserId, Guid WorkoutSessionId)
-        : IRequest<Result<WorkoutSessionSummaryResponse>>;
+        : ICommand<WorkoutSessionSummaryResponse>;
 
     public sealed record ResumeWorkoutSessionCommand(Guid CurrentUserId, Guid WorkoutSessionId)
-        : IRequest<Result<WorkoutSessionSummaryResponse>>;
+        : ICommand<WorkoutSessionSummaryResponse>;
 
     public sealed record FinishWorkoutSessionCommand(
             Guid CurrentUserId,
@@ -26,7 +27,7 @@ public static class PauseResumeFinish
             WorkoutRating? OverallRating = null,
             string? GeneralNotes = null,
             int? CaloriesBurned = null)
-        : IRequest<Result<WorkoutSessionSummaryResponse>>;
+        : ICommand<WorkoutSessionSummaryResponse>;
 
     internal static WorkoutSessionSummaryResponse Summary(WorkoutSession ws, TrainingPlan? plan)
     {
@@ -49,7 +50,7 @@ public static class PauseResumeFinish
             agg.totalVolume);
     }
 
-    public sealed class PauseWorkoutSessionCommandHandler : IRequestHandler<PauseWorkoutSessionCommand, Result<WorkoutSessionSummaryResponse>>
+    public sealed class PauseWorkoutSessionCommandHandler : IRequestHandler<PauseWorkoutSessionCommand, WorkoutSessionSummaryResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<PauseWorkoutSessionCommandHandler> _logger;
@@ -60,35 +61,35 @@ public static class PauseResumeFinish
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutSessionSummaryResponse>> Handle(PauseWorkoutSessionCommand request, CancellationToken ct)
+        public async Task<WorkoutSessionSummaryResponse> Handle(PauseWorkoutSessionCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .Include(w => w.Pauses)
                 .Include(w => w.TrainingPlan)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSessionSummaryResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode pausar o treino.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status == WorkoutStatus.Completed || ws.Status == WorkoutStatus.Interrupted)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutSessionAlreadyFinished));
+                throw new DomainException("Sessão já foi finalizada.", ErrorCodes.WorkoutSessionAlreadyFinished);
             if (ws.Status != WorkoutStatus.InProgress)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutInvalidStatusTransition));
+                throw new DomainException("Apenas sessões em andamento podem ser pausadas.", ErrorCodes.WorkoutInvalidStatusTransition);
 
             try { ws.Pause(); }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Status inválido ao pausar sessão {Id}.", ws.Id);
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutInvalidStatusTransition, ex.Message));
+                throw new DomainException("Não foi possível pausar o treino.", ErrorCodes.WorkoutInvalidStatusTransition, ex.Message);
             }
 
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("SaveChangesAsync explícito concluído: PauseWorkout {Id}.", ws.Id);
-            return Result.Success(Summary(ws, ws.TrainingPlan));
+            return Summary(ws, ws.TrainingPlan);
         }
     }
 
-    public sealed class ResumeWorkoutSessionCommandHandler : IRequestHandler<ResumeWorkoutSessionCommand, Result<WorkoutSessionSummaryResponse>>
+    public sealed class ResumeWorkoutSessionCommandHandler : IRequestHandler<ResumeWorkoutSessionCommand, WorkoutSessionSummaryResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<ResumeWorkoutSessionCommandHandler> _logger;
@@ -99,32 +100,32 @@ public static class PauseResumeFinish
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutSessionSummaryResponse>> Handle(ResumeWorkoutSessionCommand request, CancellationToken ct)
+        public async Task<WorkoutSessionSummaryResponse> Handle(ResumeWorkoutSessionCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .Include(w => w.Pauses)
                 .Include(w => w.TrainingPlan)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSessionSummaryResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode retomar o treino.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status != WorkoutStatus.Paused)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutInvalidStatusTransition));
+                throw new DomainException("Apenas sessões pausadas podem ser retomadas.", ErrorCodes.WorkoutInvalidStatusTransition);
 
             try { ws.Resume(); }
             catch (InvalidOperationException ex)
             {
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutInvalidStatusTransition, ex.Message));
+                throw new DomainException("Não foi possível retomar o treino.", ErrorCodes.WorkoutInvalidStatusTransition, ex.Message);
             }
 
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("SaveChangesAsync explícito concluído: ResumeWorkout {Id}.", ws.Id);
-            return Result.Success(Summary(ws, ws.TrainingPlan));
+            return Summary(ws, ws.TrainingPlan);
         }
     }
 
-    public sealed class FinishWorkoutSessionCommandHandler : IRequestHandler<FinishWorkoutSessionCommand, Result<WorkoutSessionSummaryResponse>>
+    public sealed class FinishWorkoutSessionCommandHandler : IRequestHandler<FinishWorkoutSessionCommand, WorkoutSessionSummaryResponse>
     {
         private readonly IApplicationDbContext _db;
         private readonly ILogger<FinishWorkoutSessionCommandHandler> _logger;
@@ -135,28 +136,28 @@ public static class PauseResumeFinish
             _logger = logger;
         }
 
-        public async Task<Result<WorkoutSessionSummaryResponse>> Handle(FinishWorkoutSessionCommand request, CancellationToken ct)
+        public async Task<WorkoutSessionSummaryResponse> Handle(FinishWorkoutSessionCommand request, CancellationToken ct)
         {
             var ws = await _db.Set<WorkoutSession>()
                 .Include(w => w.Exercises).ThenInclude(e => e.Sets)
                 .Include(w => w.Pauses)
                 .Include(w => w.TrainingPlan)
                 .FirstOrDefaultAsync(w => w.Id == request.WorkoutSessionId, ct);
-            if (ws == null) return Result.Failure<WorkoutSessionSummaryResponse>(Error.NotFound(ErrorCodes.WorkoutSessionNotFound));
+            if (ws == null) throw new DomainException("Sessão de treino não encontrada.", ErrorCodes.WorkoutSessionNotFound);
             if (ws.StudentId != request.CurrentUserId)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutCannotStartNotOwner));
+                throw new DomainException("Apenas o dono da sessão pode finalizar o treino.", ErrorCodes.WorkoutCannotStartNotOwner);
             if (ws.Status != WorkoutStatus.InProgress && ws.Status != WorkoutStatus.Paused)
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutNotInProgressOrPaused));
+                throw new DomainException("Apenas sessões em andamento ou pausadas podem ser finalizadas.", ErrorCodes.WorkoutNotInProgressOrPaused);
 
             try { ws.Finish(request.OverallRating, request.GeneralNotes, request.CaloriesBurned); }
             catch (ArgumentException ex)
             {
-                return Result.Failure<WorkoutSessionSummaryResponse>(Error.Failure(ErrorCodes.WorkoutRatingInvalidForInterrupted, ex.Message));
+                throw new DomainException("Dados de avaliação inválidos.", ErrorCodes.WorkoutRatingInvalidForInterrupted, ex.Message);
             }
 
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("SaveChangesAsync explícito concluído: FinishWorkout {Id}.", ws.Id);
-            return Result.Success(Summary(ws, ws.TrainingPlan));
+            return Summary(ws, ws.TrainingPlan);
         }
     }
 }
