@@ -69,7 +69,7 @@ public sealed class GetMyOutgoingInvitesQueryHandler : IQueryHandler<GetMyOutgoi
 
         var profilePhotos = await _db.Set<UserProfile>()
             .Where(up => allUserIds.Contains(up.UserId))
-            .Select(up => new { up.UserId, up.Photo!.FileId })
+            .Select(up => new { up.UserId, FileId = up.Photo != null ? up.Photo.FileId : null })
             .ToDictionaryAsync(k => k.UserId, v => v.FileId, cancellationToken);
 
         var responseItems = new List<CoachInviteResponse>();
