@@ -16,7 +16,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
-var apiBase = builder.Configuration["ApiBaseUrl"];
+var apiBase = "http://localhost:5000/";
+//var apiBase = builder.Configuration["ApiBaseUrl"];
 if (string.IsNullOrEmpty(apiBase))
 {
     var baseAddr = new Uri(builder.HostEnvironment.BaseAddress);
