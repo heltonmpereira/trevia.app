@@ -4,6 +4,8 @@ namespace TreviaApp.Client.Services.Auth;
 
 public interface IAuthService
 {
+    event Func<Task>? AuthenticationChangedAsync;
+
     Task<bool> IsAuthenticatedAsync();
     Task<string?> GetAccessTokenAsync(bool forceRefresh = false);
     Task<string?> GetRefreshTokenAsync();

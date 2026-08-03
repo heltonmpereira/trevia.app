@@ -5,7 +5,7 @@ using TreviaApp.Contracts.Authentication;
 
 namespace TreviaApp.Client.Services.Auth;
 
-public class CustomAuthStateProvider : AuthenticationStateProvider
+public class CustomAuthStateProvider : AuthenticationStateProvider, IDisposable
 {
     private readonly IAuthService _authService;
     private static readonly ClaimsPrincipal Anonymous = new(new ClaimsIdentity());
@@ -13,6 +13,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public CustomAuthStateProvider(IAuthService authService)
     {
         _authService = authService;
+        _authService.AuthenticationChangedAsync += OnAuthenticationChangedAsync;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -50,7 +51,17 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         }
     }
 
-    public void NotifyAuthenticationChanged() => NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    private Task OnAuthenticationChangedAsync()
+    {
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _authService.AuthenticationChangedAsync -= OnAuthenticationChangedAsync;
+        GC.SuppressFinalize(this);
+    }
 
     public static ClaimsPrincipal BuildPrincipal(CurrentUserResponse user)
     {

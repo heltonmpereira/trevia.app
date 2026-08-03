@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text;
 using TreviaApp.Contracts.Authentication;
-using Microsoft.AspNetCore.Components.Authorization;
 
 namespace TreviaApp.Client.Services.Auth;
 
@@ -16,14 +15,22 @@ public class AuthService : IAuthService
 
     private readonly HttpClient _http;
     private readonly IJSRuntime _js;
-    private readonly AuthenticationStateProvider _authState;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
-    public AuthService(IHttpClientFactory factory, IJSRuntime js, AuthenticationStateProvider authState)
+    public event Func<Task>? AuthenticationChangedAsync;
+
+    public AuthService(IHttpClientFactory factory, IJSRuntime js)
     {
         _http = factory.CreateClient("TreviaApp.AnonymousApi");
         _js = js;
-        _authState = authState;
+    }
+
+    private async Task NotifyChangedAsync()
+    {
+        if (AuthenticationChangedAsync != null)
+        {
+            await AuthenticationChangedAsync.Invoke();
+        }
     }
 
     public async Task<bool> IsAuthenticatedAsync()
@@ -128,7 +135,7 @@ public class AuthService : IAuthService
             var auth = (await resp.Content.ReadFromJsonAsync<AuthResponse>())!;
             await PersistTokensAsync(auth);
             await LoadAndCacheMeAsync();
-            if (_authState is CustomAuthStateProvider custom) custom.NotifyAuthenticationChanged();
+            await NotifyChangedAsync();
             return auth;
         }
         finally { _lock.Release(); }
@@ -144,7 +151,7 @@ public class AuthService : IAuthService
             var auth = (await resp.Content.ReadFromJsonAsync<AuthResponse>())!;
             await PersistTokensAsync(auth);
             await LoadAndCacheMeAsync();
-            if (_authState is CustomAuthStateProvider custom) custom.NotifyAuthenticationChanged();
+            await NotifyChangedAsync();
             return auth;
         }
         finally { _lock.Release(); }
@@ -175,7 +182,7 @@ public class AuthService : IAuthService
             }
             catch { }
             await ClearLocalStorageAsync();
-            if (_authState is CustomAuthStateProvider custom) custom.NotifyAuthenticationChanged();
+            await NotifyChangedAsync();
         }
         finally { _lock.Release(); }
     }
