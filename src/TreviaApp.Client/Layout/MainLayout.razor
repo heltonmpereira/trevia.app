@@ -1,6 +1,4 @@
 @inherits LayoutComponentBase
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using TreviaApp.Client.Services.Auth
 @inject IAuthService AuthService
 @inject NavigationManager Nav
@@ -8,34 +6,36 @@
 
 <div class="page">
     <PwaInstallBanner />
-    <SyncStatusIndicator />
 
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4 d-flex justify-content-between align-items-center">
+        <div class="top-row px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="d-flex align-items-center gap-3">
-                <AuthorizeView>
-                    <Authorized>
-                        <span class="text-muted small">
-                            Olá, <strong>@(context.User.Identity?.Name ?? "Usuário")</strong>
-                        </span>
-                    </Authorized>
-                </AuthorizeView>
+                @if (_isAuthenticated && _userName != null)
+                {
+                    <span class="text-muted small">
+                        Olá, <strong>@_userName</strong>
+                    </span>
+                }
+                @if (_isAuthenticated)
+                {
+                    <SyncStatusIndicator ShowText="true" />
+                }
             </div>
             <div class="d-flex align-items-center gap-2">
-                <AuthorizeView>
-                    <Authorized>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="GoToProfile">Perfil</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="LogoutAsync">Sair</button>
-                    </Authorized>
-                    <NotAuthorized>
-                        <NavLink href="login" class="btn btn-sm btn-outline-primary">Entrar</NavLink>
-                        <NavLink href="register" class="btn btn-sm btn-primary ms-1">Criar conta</NavLink>
-                    </NotAuthorized>
-                </AuthorizeView>
+                @if (_isAuthenticated)
+                {
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="GoToProfile">Perfil</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="LogoutAsync">Sair</button>
+                }
+                else
+                {
+                    <NavLink href="login" class="btn btn-sm btn-outline-primary">Entrar</NavLink>
+                    <NavLink href="register" class="btn btn-sm btn-primary ms-1">Criar conta</NavLink>
+                }
             </div>
         </div>
 
@@ -46,14 +46,49 @@
 </div>
 
 @code {
-    protected override void OnInitialized()
+    private bool _isAuthenticated;
+    private string? _userName;
+
+    protected override async Task OnInitializedAsync()
     {
         AuthService.AuthenticationChangedAsync += OnAuthChanged;
+        await RefreshAuthStateAsync();
     }
 
     private async Task OnAuthChanged()
     {
+        await RefreshAuthStateAsync();
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAuthStateAsync()
+    {
+        try
+        {
+            _isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            if (_isAuthenticated)
+            {
+                var me = await AuthService.GetCurrentUserCachedAsync();
+                if (me != null)
+                {
+                    var full = $"{me.FirstName} {me.LastName}".Trim();
+                    _userName = string.IsNullOrEmpty(full) ? me.Email : full;
+                }
+                else
+                {
+                    _userName = "Usuário";
+                }
+            }
+            else
+            {
+                _userName = null;
+            }
+        }
+        catch
+        {
+            _isAuthenticated = false;
+            _userName = null;
+        }
     }
 
     private void GoToProfile() => Nav.NavigateTo("profile");
