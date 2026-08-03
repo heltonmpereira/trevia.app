@@ -181,7 +181,7 @@ namespace TreviaApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("CoachId", "StudentId")
                         .IsUnique()
                         .HasDatabaseName("IX_CoachStudentLinks_UniqueActivePair")
-                        .HasFilter("[IsActive] = 1 AND [IsDeleted] = 0");
+                        .HasFilter("\"IsActive\" = TRUE AND \"IsDeleted\" = FALSE");
 
                     b.HasIndex("StudentId", "IsActive");
 
@@ -256,7 +256,7 @@ namespace TreviaApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("CoachId", "StudentId", "Status")
                         .IsUnique()
                         .HasDatabaseName("IX_CoachStudentRequests_UniquePendingPair")
-                        .HasFilter("[Status] = 'Pending'");
+                        .HasFilter("\"Status\" = 'Pending'");
 
                     b.ToTable("CoachStudentRequests", (string)null);
                 });

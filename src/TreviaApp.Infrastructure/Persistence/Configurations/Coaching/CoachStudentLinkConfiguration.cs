@@ -23,7 +23,7 @@ public class CoachStudentLinkConfiguration : IEntityTypeConfiguration<CoachStude
         b.Property(l => l.EndReasonNotes).HasMaxLength(1000);
 
         b.HasIndex(l => new { l.CoachId, l.StudentId })
-         .HasFilter("[IsActive] = 1 AND [IsDeleted] = 0")
+         .HasFilter("\"IsActive\" = TRUE AND \"IsDeleted\" = FALSE")
          .IsUnique()
          .HasDatabaseName("IX_CoachStudentLinks_UniqueActivePair");
 

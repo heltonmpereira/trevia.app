@@ -29,7 +29,7 @@ public class CoachStudentRequestConfiguration : IEntityTypeConfiguration<CoachSt
         b.Property(r => r.ExpiresAt).IsRequired();
 
         b.HasIndex(r => new { r.CoachId, r.StudentId, r.Status })
-         .HasFilter("[Status] = 'Pending'")
+         .HasFilter("\"Status\" = 'Pending'")
          .IsUnique()
          .HasDatabaseName("IX_CoachStudentRequests_UniquePendingPair");
 
