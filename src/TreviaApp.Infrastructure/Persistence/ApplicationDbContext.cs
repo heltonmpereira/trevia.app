@@ -16,7 +16,6 @@ using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Domain.WorkoutExecution.Feedback;
 using TreviaApp.Infrastructure.Identity;
-using TreviaApp.Domain.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
 {

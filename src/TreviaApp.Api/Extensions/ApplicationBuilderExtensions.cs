@@ -1,8 +1,8 @@
-namespace TreviaApp.Api.Extensions;
-
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+
+namespace TreviaApp.Api.Extensions;
 
 public static class ApplicationBuilderExtensions
 {

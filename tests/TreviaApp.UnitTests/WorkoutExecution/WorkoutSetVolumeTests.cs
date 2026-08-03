@@ -32,7 +32,7 @@ public class WorkoutSetVolumeTests
             inclinePercent: null,
             calories: null,
             completed: true,
-            difficultyRating: SetRating.Moderate,
+            difficultyRating: SetRating.Adequate,
             notes: null);
 
         set.VolumeKg.Should().Be(30 * 10);

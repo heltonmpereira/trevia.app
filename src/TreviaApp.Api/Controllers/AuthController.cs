@@ -22,7 +22,7 @@ using TreviaApp.Contracts.Authentication;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [EnableRateLimiting("AuthEndpoint")]
-public class AuthController : ControllerBase
+public class AuthController : ApiControllerBase
 {
     private readonly ISender _sender;
     public AuthController(ISender sender) => _sender = sender;

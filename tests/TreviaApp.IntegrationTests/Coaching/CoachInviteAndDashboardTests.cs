@@ -76,7 +76,7 @@ public class CoachInviteAndDashboardTests : IAsyncLifetime
         var studentsResp = await _client.GetFromJsonAsync<CoachStudentsPagedResponse>(
             "/api/coaching/students?pageSize=50");
         studentsResp.Should().NotBeNull();
-        studentsResp!.Items.Should().Contain(s => s.StudentId == studentId);
+        studentsResp!.Items.Should().Contain(s => s.UserId == studentId);
     }
 
     [Fact]

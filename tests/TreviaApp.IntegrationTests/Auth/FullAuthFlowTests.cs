@@ -93,9 +93,9 @@ public class FullAuthFlowTests : IAsyncLifetime
 
         var resetResp = await _client.PostAsJsonAsync("/api/auth/reset-password", new ResetPasswordRequest
         {
-            UserId = userId,
+            UserId = userId.ToString(),
             Token = resetToken,
-            NewPassword = "NewStudent123!",
+            Password = "NewStudent123!",
             ConfirmPassword = "NewStudent123!"
         });
         resetResp.StatusCode.Should().Be(HttpStatusCode.OK);

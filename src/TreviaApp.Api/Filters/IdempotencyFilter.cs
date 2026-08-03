@@ -38,7 +38,7 @@ public class IdempotencyFilter : IAsyncActionFilter
         if (userId == null || userId == Guid.Empty)
         {
             var endpointMetadata = context.ActionDescriptor.EndpointMetadata;
-            var allowAnonymous = endpointMetadata.OfType<IAllowAnonymousAttribute>().Any();
+            var allowAnonymous = endpointMetadata.OfType<AllowAnonymousAttribute>().Any();
             if (allowAnonymous)
             {
                 await next();

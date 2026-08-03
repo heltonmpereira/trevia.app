@@ -73,10 +73,7 @@ public class TrainingPlanCrudTests : IAsyncLifetime
             TotalWeeks: 12,
             SessionsPerWeek: 3,
             TargetVolume: null,
-            Tags: createReq.Tags,
-            DifficultyLevel: DifficultyLevel.Beginner,
-            Goal: TrainingGoal.Hypertrophy,
-            Environment: TrainingEnvironment.Gym);
+            Tags: createReq.Tags);
 
         var updateResp = await _client.PutAsJsonAsync($"/api/training-plans/{created.Id}", updateReq);
         updateResp.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -116,9 +113,10 @@ public class TrainingPlanCrudTests : IAsyncLifetime
 
         var addSessionReq = new AddTrainingSessionRequest(
             Name: "Dia A - Superior",
+            Order: 1,
             Description: "Peito, ombro, tríceps",
-            Weekday: null,
-            EstimatedDurationMinutes: 60);
+            SuggestedDayOfWeek: null,
+            EstimatedDuration: TimeSpan.FromMinutes(60));
         var addSessionResp = await _client.PostAsJsonAsync($"/api/training-plans/{planId}/sessions", addSessionReq);
         addSessionResp.StatusCode.Should().Be(HttpStatusCode.Created);
         var sessionData = await addSessionResp.Content.ReadFromJsonAsync<TrainingSessionResponse>();

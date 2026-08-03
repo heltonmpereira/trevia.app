@@ -50,12 +50,12 @@ public class WorkoutSessionDurationTests
         var ws = CreateSession();
         ws.Start();
 
-        ws.Finish(overallRating: WorkoutRating.Good);
+        ws.Finish(overallRating: WorkoutRating.Moderate);
 
         ws.Status.Should().Be(WorkoutStatus.Completed);
         ws.FinishedAt.Should().NotBeNull();
         ws.ActiveTime.Should().NotBeNull();
-        ws.ActiveTime.Should().BeGreaterOrEqualTo(TimeSpan.Zero);
+        ws.ActiveTime.Should().BeGreaterThanOrEqualTo(TimeSpan.Zero);
         ws.TotalDurationElapsed.Should().NotBeNull();
     }
 
@@ -127,9 +127,7 @@ public class WorkoutSessionDurationTests
         ws.Start();
         ws.Pause();
 
-        var pause = ws.Pauses.First();
-        typeof(WorkoutPause).GetProperty("EndedAt")!
-            .SetValue(pause, pause.StartedAt.AddSeconds(10));
+        System.Threading.Thread.Sleep(2000);
 
         ws.Resume();
         ws.Finish();
@@ -137,7 +135,7 @@ public class WorkoutSessionDurationTests
         var totalElapsed = ws.TotalDurationElapsed!.Value;
         var activeTime = ws.ActiveTime!.Value;
         var diff = totalElapsed - activeTime;
-        diff.TotalSeconds.Should().BeGreaterOrEqualTo(9);
+        diff.TotalSeconds.Should().BeGreaterThanOrEqualTo(1.5);
     }
 
     [Fact]
@@ -190,7 +188,7 @@ public class WorkoutSessionDurationTests
         ws.Start();
         ws.Pause();
 
-        ws.Finish(overallRating: WorkoutRating.Good);
+        ws.Finish(overallRating: WorkoutRating.Moderate);
         ws.Status.Should().Be(WorkoutStatus.Completed);
     }
 
@@ -203,7 +201,7 @@ public class WorkoutSessionDurationTests
 
         ws.AddExercisesFromPrescription(new[]
         {
-            (sessionExerciseId, exerciseId, 1, "Notas do aluno")
+            (sessionExerciseId, exerciseId, 1, (string?)"Notas do aluno")
         });
 
         ws.Exercises.Should().HaveCount(1);

@@ -47,22 +47,22 @@ public class ExerciseApprovalFlowTests : IAsyncLifetime
         var createReq = new CreateExerciseRequest(
             Name: "Supino Reto com Barra",
             Environment: TrainingEnvironment.Gym,
-            Modality: ExerciseModality.Strength,
+            Modality: ExerciseModality.WeightTraining,
             DifficultyLevel: DifficultyLevel.Intermediate,
-            MeasurementType: MeasurementType.WeightReps,
+            MeasurementType: MeasurementType.LoadAndRepetitions,
             Instructions: "Deite no banco, pegue a barra, desça até o peito e empurre para cima.",
             ShortDescription: "Exercício composto para peitoral",
             Tips: "Mantenha os pés firmes no chão",
             Visibility: Visibility.Public,
             Muscles: new[]
             {
-                new MuscleMappingRequest(Muscle.Chest_PectoralisMajor, MuscleRole.Primary, 80),
-                new MuscleMappingRequest(Muscle.Arms_TricepsBrachii, MuscleRole.Secondary, 40)
+                new MuscleMappingRequest(Muscle.Chest, MuscleRole.Primary, 80),
+                new MuscleMappingRequest(Muscle.Triceps, MuscleRole.Secondary, 40)
             },
             Equipments: new[]
             {
                 new EquipmentMappingRequest(Equipment.Barbell, Required: true),
-                new EquipmentMappingRequest(Equipment.FlatBench, Required: true)
+                new EquipmentMappingRequest(Equipment.Bench, Required: true)
             });
 
         var createResp = await _client.PostAsJsonAsync("/api/exercises", createReq);
@@ -70,7 +70,7 @@ public class ExerciseApprovalFlowTests : IAsyncLifetime
         var created = await createResp.Content.ReadFromJsonAsync<ExerciseDetailResponse>();
         created.Should().NotBeNull();
         created!.Id.Should().NotBeEmpty();
-        created.Status.Should().BeOneOf(ExerciseStatus.Draft, ExerciseStatus.PendingReview);
+        created.Status.Should().BeOneOf(ExerciseStatus.Draft, ExerciseStatus.AwaitingApproval);
 
         var exId = created.Id;
         var submitResp = await _client.PostAsync($"/api/exercises/{exId}/submit", null);
@@ -101,9 +101,9 @@ public class ExerciseApprovalFlowTests : IAsyncLifetime
         var req = new CreateExerciseRequest(
             Name: "Exercicio Sem Auth",
             Environment: TrainingEnvironment.Home,
-            Modality: ExerciseModality.Strength,
+            Modality: ExerciseModality.WeightTraining,
             DifficultyLevel: DifficultyLevel.Beginner,
-            MeasurementType: MeasurementType.BodyweightReps,
+            MeasurementType: MeasurementType.Bodyweight,
             Instructions: "Instruções");
 
         var resp = await _client.PostAsJsonAsync("/api/exercises", req);
@@ -119,9 +119,9 @@ public class ExerciseApprovalFlowTests : IAsyncLifetime
         var createReq = new CreateExerciseRequest(
             "Agachamento Livre",
             TrainingEnvironment.Gym,
-            ExerciseModality.Strength,
+            ExerciseModality.WeightTraining,
             DifficultyLevel.Intermediate,
-            MeasurementType.WeightReps,
+            MeasurementType.LoadAndRepetitions,
             "Agache até a coxa ficar paralela");
 
         var created = await _client.PostAsJsonAsync("/api/exercises", createReq);

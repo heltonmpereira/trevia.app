@@ -55,16 +55,15 @@ public static class ServiceCollectionExtensions
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.ContentType = "application/problem+json";
-                var retryAfter = context.Lease?.RetryAfter ?? TimeSpan.FromSeconds(30);
-                context.HttpContext.Response.Headers.RetryAfter =
-                    ((int)retryAfter.TotalSeconds).ToString();
+                const int retryAfterSeconds = 30;
+                context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
                 await context.HttpContext.Response.WriteAsJsonAsync(new
                 {
                     type = "https://datatracker.ietf.org/doc/html/rfc6585#section-4",
                     title = "Too Many Requests",
                     status = 429,
                     detail = "Rate limit exceeded. Please retry later.",
-                    retry_after_seconds = (int)retryAfter.TotalSeconds
+                    retry_after_seconds = retryAfterSeconds
                 }, token);
             };
 

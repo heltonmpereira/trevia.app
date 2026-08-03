@@ -2,6 +2,7 @@ namespace TreviaApp.ArchitectureTests;
 using FluentAssertions;
 using NetArchTest.Rules;
 using System.Reflection;
+using System.Linq;
 using Xunit;
 
 public class ServiceRegistrationTests
@@ -52,7 +53,7 @@ public class ServiceRegistrationTests
             .HaveNameEndingWith("Store")
             .GetTypes();
 
-        if (result != null && result.Length > 0)
+        if (result != null && result.Count() > 0)
         {
             foreach (var t in result)
             {

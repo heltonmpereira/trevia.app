@@ -141,8 +141,8 @@ public class UserLevelTests
     [Fact]
     public void DailyWorkoutCapConstants_AreDefined()
     {
-        GamificationConstants.DailyWorkoutAwardCap.Should().BeGreaterOrEqualTo(1);
-        GamificationConstants.DailySetPointsCap.Should().BeGreaterOrEqualTo(10);
+        GamificationConstants.DailyWorkoutAwardCap.Should().BeGreaterThanOrEqualTo(1);
+        GamificationConstants.DailySetPointsCap.Should().BeGreaterThanOrEqualTo(10);
         GamificationConstants.WorkoutCompletedPoints.Should().BeGreaterThan(0);
         GamificationConstants.SetCompletedPoints.Should().BeGreaterThan(0);
     }
@@ -154,7 +154,7 @@ public class UserLevelTests
         var firstAdd = ul.AddXp(GamificationConstants.WorkoutCompletedPoints * GamificationConstants.XpPerPoint);
         var secondAdd = ul.AddXp(GamificationConstants.WorkoutCompletedPoints * GamificationConstants.XpPerPoint);
 
-        ul.CurrentLevel.Should().BeGreaterOrEqualTo(1);
+        ul.CurrentLevel.Should().BeGreaterThanOrEqualTo(1);
         ul.TotalXpEarned.Should().BePositive();
     }
 }
