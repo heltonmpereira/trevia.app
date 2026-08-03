@@ -357,7 +357,7 @@ public sealed class CreateSetFeedbackCommandHandler
         return new SetFeedbackResponse(
             fb.Id, fb.CoachId, coachName, fb.StudentId, fb.WorkoutSessionId,
             fb.WorkoutExerciseId, fb.WorkoutSetId, ws.WorkoutExercise.Exercise?.Name,
-            ws.OrderNumber, fb.Text, fb.Tone, fb.IsPublic, fb.CreatedAt, fb.UpdatedAt,
+            ws.SetNumber, fb.Text, fb.Tone, fb.IsPublic, fb.CreatedAt, fb.UpdatedAt,
             fb.ReadAt, fb.MediaReferenceUrl);
     }
 }
@@ -616,7 +616,7 @@ file static class FeedbackQueryBuilders
                 WorkoutExerciseId = f.WorkoutExerciseId,
                 ExerciseName = ex != null ? ex.Name : null,
                 WorkoutSetId = f.WorkoutSetId,
-                SetOrderNumber = wset != null ? wset.OrderNumber : null,
+                SetOrderNumber = wset != null ? wset.SetNumber : null,
                 Text = f.Text,
                 Tone = f.Tone,
                 IsPublic = f.IsPublic,
@@ -698,7 +698,7 @@ public sealed class GetFeedbacksBySessionQueryHandler
             select new SetFeedbackResponse(
                 f.Id, f.CoachId, coach.DisplayName ?? coach.Email ?? string.Empty,
                 f.StudentId, f.WorkoutSessionId, f.WorkoutExerciseId, f.WorkoutSetId,
-                ex != null ? ex.Name : null, wset != null ? wset.OrderNumber : 0,
+                ex != null ? ex.Name : null, wset != null ? wset.SetNumber : 0,
                 f.Text, f.Tone, f.IsPublic, f.CreatedAt, f.UpdatedAt, f.ReadAt, f.MediaReferenceUrl)
             ).ToListAsync(ct);
 
@@ -732,7 +732,14 @@ public sealed class GetMyFeedbacksQueryHandler
             .Take(q.PageSize)
             .ToListAsync(ct);
 
-        return new PaginatedResponse<UnifiedFeedbackItemResponse>(items, q.Page, q.PageSize, total);
+        return new PaginatedResponse<UnifiedFeedbackItemResponse>
+        {
+            Items = items,
+            TotalCount = total,
+            PageIndex = q.Page,
+            PageSize = q.PageSize,
+            HasNextPage = (q.Page * q.PageSize) < total
+        };
     }
 }
 
@@ -775,7 +782,14 @@ public sealed class GetStudentFeedbacksQueryHandler
             .Take(q.PageSize)
             .ToListAsync(ct);
 
-        return new PaginatedResponse<UnifiedFeedbackItemResponse>(items, q.Page, q.PageSize, total);
+        return new PaginatedResponse<UnifiedFeedbackItemResponse>
+        {
+            Items = items,
+            TotalCount = total,
+            PageIndex = q.Page,
+            PageSize = q.PageSize,
+            HasNextPage = (q.Page * q.PageSize) < total
+        };
     }
 }
 

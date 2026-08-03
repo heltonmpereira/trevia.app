@@ -242,57 +242,118 @@ docs/backlog/sprint-10.md            (este arquivo — atualizado passo a passo)
 - [x] `FeedbackQueryBuilders.UnifiedFeedbacks()` concatena 3 tabelas (Session/Exercise/Set) via LINQ Concat e Join para CoachName/StudentName/SessionName/ExerciseName
 - [x] Atualizar este arquivo → marcar PASSO 3 = [x]
 
-### PASSO 4 — Infrastructure Layer (EF + Migration)
-- [ ] Adicionar 4 novos DbSets em `IApplicationDbContext` e `ApplicationDbContext`
-- [ ] 4 Configuration classes (índices, FK behaviors, max lengths, default values)
-- [ ] Global Query Filters nas 4 entidades
-- [ ] Gerar migration `AddFeedbacksAndNotifications`
-- [ ] Aplicar migration local / buildar scripts
-- [ ] Atualizar este arquivo → marcar PASSO 4 = [x]
+### PASSO 4 — Infrastructure Layer (EF + Migration) ✅ (2026-08-03)
+- [x] Adicionar 4 novos DbSets em `IApplicationDbContext` e `ApplicationDbContext` (pré-existente: [ApplicationDbContext.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/ApplicationDbContext.cs#L44-L47))
+- [x] 4 Configuration classes (índices, FK behaviors, max lengths, default values): [WorkoutFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/WorkoutFeedbackConfiguration.cs), [ExerciseFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/ExerciseFeedbackConfiguration.cs), [SetFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/SetFeedbackConfiguration.cs), [NotificationConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/NotificationConfiguration.cs)
+- [x] Global Query Filters nas 4 entidades (pré-existente: [ApplicationDbContext.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/ApplicationDbContext.cs#L96-L99))
+- [x] Gerar migration `AddFeedbacksAndNotifications`: [20260803124451_AddFeedbacksAndNotifications.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Migrations/20260803124451_AddFeedbacksAndNotifications.cs)
+- [x] Correções de build: `PaginatedResponse<T>` inicializador de objeto (não construtor 4-args) + `WorkoutSet.SetNumber` (não `OrderNumber`) em [FeedbackUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Feedbacks/FeedbackUseCases.cs) e [NotificationUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Notifications/NotificationUseCases.cs)
+- [x] Atualizar este arquivo → marcar PASSO 4 = [x]
 
-### PASSO 5 — Controllers (API Layer)
-- [ ] FeedbacksController.cs (9 endpoints)
-- [ ] NotificationsController.cs (6 endpoints)
-- [ ] Atualizar este arquivo → marcar PASSO 5 = [x]
+### PASSO 5 — Controllers (API Layer) ✅ (2026-08-03)
+- [x] FeedbacksController.cs (9 endpoints + 1 extra: responder exercise feedback): [FeedbacksController.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Api/Controllers/FeedbacksController.cs)
+- [x] NotificationsController.cs (6 endpoints: unread-count, list paginated, detail, mark-1-read, mark-all-read, delete): [NotificationsController.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Api/Controllers/NotificationsController.cs)
+- [x] Atualizar este arquivo → marcar PASSO 5 = [x]
 
-### PASSO 6 — Build + Validação
-- [ ] `dotnet build TreviaApp.slnx -c Debug` → 0 erros, 0 warnings
-- [ ] `dotnet ef migrations script --idempotent -o verify.sql -p TreviaApp.Infrastructure` (opcional, gerar script de conferência)
-- [ ] Atualizar este arquivo → marcar PASSO 6 = [x]
+### PASSO 6 — Build + Validação ✅ (2026-08-03)
+- [x] `dotnet build TreviaApp.slnx -c Debug` → 0 erros, 1 warning (CS0618 TestContainers obsoleto em IntegrationTests — não relacionado à sprint 10)
+- [x] Correções pós-build identificadas e aplicadas:
+  - Correção construtor `PaginatedResponse<T>` → inicializador de objeto com `Items`, `TotalCount`, `PageIndex`, `PageSize`, `HasNextPage`
+  - Correção `WorkoutSet.OrderNumber` → `WorkoutSet.SetNumber` (3 ocorrências: CreateSetHandler, QueryBuilder Concat, GetBySession)
+- [x] Atualizar este arquivo → marcar PASSO 6 = [x]
 
-### PASSO 7 — Pós-Implementação (Relatório Final)
-- [ ] Preencher seção "PÓS-IMPLEMENTAÇÃO" abaixo com todos itens obrigatórios do PROJECT_SPEC.md
-- [ ] Atualizar este arquivo → marcar PASSO 7 = [x]
+### PASSO 7 — Pós-Implementação (Relatório Final) ✅ (2026-08-03)
+- [x] Preencher seção "PÓS-IMPLEMENTAÇÃO" abaixo com todos itens obrigatórios do PROJECT_SPEC.md
+- [x] Atualizar este arquivo → marcar PASSO 7 = [x]
 
 ---
 
 ## ✅ PÓS-IMPLEMENTAÇÃO (Resumo, Arquivos, Endpoints disponíveis)
 
-*(Preencher após conclusão do PASSO 6)*
+*(Concluído após PASSO 6 em 2026-08-03)*
 
 ### RESUMO:
 
-*(Aguardando conclusão)*
+Sprint 10 entregue com **Módulo de Feedbacks e Notificações** completo na API, cobrindo as 7 User Stories planejadas (US-1001 a US-1007):
+
+- **US-1001 / 1002 / 1003 (Feedback em 3 níveis)**: Criação de comentários orientativos em `WorkoutSession` (sessão completa), `WorkoutExercise` (exercício específico) e `WorkoutSet` (série individual) com `FeedbackTone` (Incentivo/Construtivo/Correção/Neutro), flag pública, texto até 4000 chars, e campo preparatório `MediaReferenceUrl` para vídeos futuros em nível de série.
+- **US-1004 (Listagens)**: Aluno lista seus feedbacks recebidos paginados (`/my`); Coach lista feedbacks enviados para um aluno específico (`/students/{studentId}`). Suporte a filtros por `sessionId`, `onlyUnread`, `Level`.
+- **US-1005 (Notificações + Hook)**: Entidade `Notification` persistida em banco com 6 tipos (`FeedbackReceived`, `WorkoutCompleted`, `PlanAssigned`, `LinkAccepted`, `LinkRevoked`, `CoachMessage`). **Side-effect atômico**: cada `Create*FeedbackCommandHandler` insere o feedback E a notificação no mesmo `SaveChangesAsync`, garantindo consistência transacional.
+- **US-1006 (Autorização resource-based)**: Reuso do bitwise flag `CoachPermissions.CanSendFeedback (1<<5 = 32)` + checagem `CoachStudentLink.IsActive` via `FeedbackAuthHelpers.EnsureCoachCanSendFeedbackAsync`. Edição/exclusão restritas ao autor original (`CreatedByCoachId == currentUser`) ou Admin. Aluno só visualiza feedbacks direcionados a ele.
+- **US-1007 (Badge não-lidas)**: `GET /api/notifications/unread-count` com índice composto otimizado `(UserId, IsRead, CreatedAt DESC)`; endpoints de marcar 1 como lida, marcar todas, listar paginada, detalhe, excluir.
 
 ### ARQUIVOS CRIADOS:
 
 | Arquivo | Conteúdo |
 |---|---|
-| *(Preencher no final)* | |
+| [FeedbackAndNotificationEnums.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Shared/Enums/FeedbackAndNotificationEnums.cs) | 4 enums: `FeedbackTone`, `NotificationType`, `NotificationReferenceType`, `FeedbackLevel` |
+| [WorkoutFeedback.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Domain/WorkoutExecution/Feedback/WorkoutFeedback.cs) | Agregado raiz — feedback de nível de sessão (US-1001) |
+| [ExerciseFeedback.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Domain/WorkoutExecution/Feedback/ExerciseFeedback.cs) | Agregado raiz — feedback de nível exercício com `StudentResponseText/StudentRespondedAt` (US-1002) |
+| [SetFeedback.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Domain/WorkoutExecution/Feedback/SetFeedback.cs) | Agregado raiz — feedback de nível série com `MediaReferenceUrl` preparatório (US-1003) |
+| [Notification.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Domain/Notifications/Notification.cs) | Agregado raiz — notificação interna persistida (US-1005/1007) |
+| [FeedbackRequests.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Contracts/Feedbacks/Requests/FeedbackRequests.cs) | 5 records: `CreateWorkout/Exercise/Set`, `Update`, `RespondToExercise` |
+| [FeedbackResponses.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Contracts/Feedbacks/Responses/FeedbackResponses.cs) | `Workout/Exercise/SetFeedbackResponse`, `FeedbacksBySessionBundleResponse`, `UnifiedFeedbackItemResponse` |
+| [NotificationResponses.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Contracts/Notifications/Responses/NotificationResponses.cs) | `NotificationResponse`, `UnreadCountResponse`, `MarkManyResultResponse` |
+| [FeedbackUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Feedbacks/FeedbackUseCases.cs) | 7 Commands + 5 Validators + 3 Queries + 10 Handlers + helpers de autorização (`FeedbackAuthHelpers`) e build de query unificada (`FeedbackQueryBuilders.UnifiedFeedbacks`) |
+| [NotificationUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Notifications/NotificationUseCases.cs) | 3 Commands + 2 Validators + 3 Queries + 6 Handlers (Marcar/Listar/Contar notificações) |
+| [WorkoutFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/WorkoutFeedbackConfiguration.cs) | EF config: índices, FK Restrict/Cascade, max lengths, default `IsPublic=true` |
+| [ExerciseFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/ExerciseFeedbackConfiguration.cs) | EF config: índices, FKs, `StudentResponseText varchar(4000)` |
+| [SetFeedbackConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/WorkoutExecution/SetFeedbackConfiguration.cs) | EF config: índices, FKs Cascade p/ WorkoutSet, `MediaReferenceUrl varchar(2048)` |
+| [NotificationConfiguration.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Configurations/NotificationConfiguration.cs) | EF config: índice crítico `(UserId, IsRead, CreatedAt DESC)` + FK Cascade p/ User |
+| [20260803124451_AddFeedbacksAndNotifications.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/Migrations/20260803124451_AddFeedbacksAndNotifications.cs) | Migration: 4 tabelas novas + respectivos Designer/ModelSnapshot |
+| [FeedbacksController.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Api/Controllers/FeedbacksController.cs) | 10 endpoints: 3 Creates, Update, Delete, GetBySession, MarkRead, GetMy (Student), GetStudent (Coach/Admin), RespondExercise |
+| [NotificationsController.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Api/Controllers/NotificationsController.cs) | 6 endpoints: UnreadCount, GetMyPaginated, GetById, Mark1Read, MarkAllRead, Delete |
 
 ### ARQUIVOS ALTERADOS:
 
 | Arquivo | Alteração |
 |---|---|
-| *(Preencher no final)* | |
+| [ApplicationDbContext.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Infrastructure/Persistence/ApplicationDbContext.cs) | 4 novos DbSets (`WorkoutFeedbacks`, `ExerciseFeedbacks`, `SetFeedbacks`, `Notifications`) + 4 `HasQueryFilter(x => !x.IsDeleted)` no `OnModelCreating` |
+| [ErrorCodes.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Shared/Constants/ErrorCodes.cs#L261-L289) | 7 novas constantes: `FeedbackNotFound`, `FeedbackForbidden`, `FeedbackCannotSendNoPermission`, `FeedbackTextTooLong`, `FeedbackEmpty`, `NotificationNotFound`, `NotificationNotOwner` |
+| [FeedbackUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Feedbacks/FeedbackUseCases.cs) | Correções pós-build: `OrderNumber → SetNumber` (3 ocorrências) + `PaginatedResponse` → inicializador de objeto ao invés de construtor 4-args |
+| [NotificationUseCases.cs](file:///c:/dev/github/trevia.app/src/TreviaApp.Application/Notifications/NotificationUseCases.cs) | Correção `PaginatedResponse` → inicializador de objeto |
 
 ### ENDPOINTS DISPONÍVEIS:
 
-*(Preencher no final com rotas finais, exemplo de request JSON e resposta esperada)*
+#### FeedbacksController → `api/feedbacks`
+
+| Método | Rota | Autorização | Request | Response |
+|---|---|---|---|---|
+| POST | `/workout-sessions/{sessionId}` | Trainer/GymManager/Admin | `{ text, tone, isPublic }` | `201 Created` + `WorkoutFeedbackResponse` |
+| POST | `/workout-exercises/{exerciseId}` | Trainer/GymManager/Admin | `{ text, tone, isPublic }` | `201 Created` + `ExerciseFeedbackResponse` |
+| POST | `/workout-sets/{setId}` | Trainer/GymManager/Admin | `{ text, tone, isPublic, mediaReferenceUrl? }` | `201 Created` + `SetFeedbackResponse` |
+| PUT | `/{feedbackId}?level=Session\|Exercise\|Set` | Autor ou Admin | `{ text, tone, isPublic?, mediaReferenceUrl? }` | `200 OK` + `UnifiedFeedbackItemResponse` |
+| DELETE | `/{feedbackId}?level=Session\|Exercise\|Set` | Autor ou Admin | — | `204 NoContent` |
+| GET | `/workout-sessions/{sessionId}` | Estudante dono / Trainer vínculado / Admin | — | `200 OK` + `FeedbacksBySessionBundleResponse` (3 listas) |
+| PUT | `/{feedbackId}/read?level=Session\|Exercise\|Set` | Student | — | `204 NoContent` |
+| GET | `/my?page=&pageSize=&sessionId=&onlyUnread=&level=` | Student | — | `200 OK` + `PaginatedResponse<UnifiedFeedbackItemResponse>` |
+| GET | `/students/{studentId}?page=&pageSize=&sessionId=&level=` | Trainer/GymManager/Admin | — | `200 OK` + `PaginatedResponse<UnifiedFeedbackItemResponse>` |
+| POST | `/exercise-feedbacks/{feedbackId}/respond` | Student | `{ responseText }` | `200 OK` + `ExerciseFeedbackResponse` |
+
+**Exemplo: Criar feedback em sessão**
+```http
+POST /api/feedbacks/workout-sessions/11111111-1111-1111-1111-111111111111
+Authorization: Bearer <token-trainer>
+Content-Type: application/json
+
+{ "text": "Excelente sessão! Amanhã aumente 2,5kg no supino inclinado.", "tone": 1, "isPublic": true }
+```
+→ `201 Created` → dispara automaticamente `Notification` tipo `FeedbackReceived` para o aluno da sessão (mesmo `SaveChanges`).
+
+#### NotificationsController → `api/notifications`
+
+| Método | Rota | Autorização | Descrição | Response |
+|---|---|---|---|---|
+| GET | `/unread-count` | Qualquer autenticado | Badge topo app | `{ unreadCount, lastNotificationAt }` |
+| GET | `?page=1&pageSize=50&onlyUnread=false` | Qualquer autenticado | Lista paginada | `PaginatedResponse<NotificationResponse>` |
+| GET | `/{id}` | Dono | Detalhe (marca lido auto) | `NotificationResponse` |
+| PUT | `/{id}/read` | Dono | Marca 1 como lida | `NotificationResponse` |
+| PUT | `/read-all` | Dono | Batch marcar todas lidas | `{ affectedCount }` |
+| DELETE | `/{id}` | Dono | Soft-delete 1 notificação | `204 NoContent` |
 
 ### TELAS DISPONÍVEIS:
 
-(Não aplicável — sprint somente API; telas client são sprints separadas)
+(Não aplicável — sprint somente API; telas client são sprints separadas. Endpoints suportam: 1) Modal de feedback Coach, 2) Painel Feedbacks recebidos Aluno, 3) Central de notificações dropdown, 4) Timeline inline em sessão.)
 
 ### COMO EXECUTAR:
 
@@ -300,43 +361,53 @@ docs/backlog/sprint-10.md            (este arquivo — atualizado passo a passo)
 cd c:\dev\github\trevia.app
 dotnet ef database update -p src\TreviaApp.Infrastructure\TreviaApp.Infrastructure.csproj -s src\TreviaApp.Api\TreviaApp.Api.csproj
 dotnet run -c Debug --project src\TreviaApp.Api\TreviaApp.Api.csproj
-# Swagger: https://localhost:5001/swagger → coleção Feedbacks e Notifications
+# Swagger: https://localhost:5001/swagger → coleções "Feedbacks" e "Notifications"
 ```
 
 ### COMO TESTAR:
 
 1. **Autenticar como Trainer**: `POST /api/auth/login` → pegar token
-2. **Garantir vínculo com CanSendFeedback**: `PUT /api/coach/links/{studentId}/permissions` com bitwise contendo `32` (= CanSendFeedback, 1<<5)
-3. **Executar treino de teste (ou usar existente)** → pegar `workoutSessionId`
-4. **Criar feedback**: `POST /api/feedbacks/workout-sessions/{sessionId}`
+2. **Garantir vínculo com CanSendFeedback**: `PUT /api/coach/links/{studentId}/permissions` com payload `{ grantedPermissions = 32 }` (= `CanSendFeedback`, bit 1<<5)
+3. **Executar treino de teste (ou usar existente)** → pegar `workoutSessionId`, `workoutExerciseId`, `workoutSetId`
+4. **Criar feedback em sessão**:
    ```json
-   { "text": "Excelente sessão, amanhã aumente 2,5kg no supino!", "tone": 1 }
+   POST /api/feedbacks/workout-sessions/{sessionId}
+   { "text": "Excelente sessão!", "tone": 1 }
    ```
-5. **Verificar badge notificação como aluno**: `GET /api/notifications/unread-count` → `{ unreadCount: 1 }`
-6. **Listar feedbacks recebidos**: `GET /api/feedbacks/my` → retorna item criado
+5. **Verificar notificação criada automaticamente** (hook): `GET /api/notifications/unread-count` logado como Student → `{ unreadCount: 1 }`
+6. **Listar feedbacks da sessão** (ambos os lados): `GET /api/feedbacks/workout-sessions/{sessionId}` → retorna bundle com Session + Exercise + Set feedbacks
+7. **Listar feedbacks recebidos (Aluno)**: `GET /api/feedbacks/my?onlyUnread=true`
+8. **Listar feedbacks para um aluno (Coach)**: `GET /api/feedbacks/students/{studentId}`
+9. **Responder feedback de exercício (Aluno)**: `POST /api/feedbacks/exercise-feedbacks/{id}/respond { "responseText": "Vou ajustar!" }`
+10. **Marcar feedback lido / notificação lida**: PUT endpoints correspondentes.
 
 ### MIGRATIONS:
 
-- Nome: `AddFeedbacksAndNotifications` (1 migration, 4 tabelas)
+- **1 migration**: `20260803124451_AddFeedbacksAndNotifications` criando 4 tabelas:
+  - `WorkoutFeedbacks` (PK, FKs: CoachId/StudentId/Restrict + WorkoutSessionId/Cascade, índices, Tone string, Text varchar(4000))
+  - `ExerciseFeedbacks` (+ colunas `StudentResponseText` varchar(4000) null + índice em WorkoutExerciseId)
+  - `SetFeedbacks` (+ `MediaReferenceUrl` varchar(2048) null + índices em ExerciseId e SetId)
+  - `Notifications` (FK UserId Cascade, índice composto `(UserId, IsRead, CreatedAt DESC)` para badge performance)
 
 ### VARIÁVEIS DE AMBIENTE:
 
-Nenhuma nova — usa as mesmas já existentes (ConnectionStrings, Jwt etc.)
+Nenhuma nova — usa as mesmas já existentes (`ConnectionStrings__DefaultConnection`, `Jwt`, `Serilog` etc).
 
 ### PENDÊNCIAS E MELHORIAS FUTURAS:
 
-1. **TESTES:** Unit + Integration não implementados nesta sprint (reserva para a Sprint 12).
-2. **SignalR / Realtime:** Endpoints HTTP prontos; adicionar hub para notificações push em tempo real.
-3. **Push mobile (FCM/APNs):** Serviço de integração externa — fora do MVP.
-4. **Mídia em Feedback:** Campo `MediaReferenceUrl` preparado; conectar com `IFileStorageService` na Sprint 11/12.
-5. **Resposta do Aluno em feedback:** Campo `StudentResponseText` existente; adicionar endpoint `POST /api/feedbacks/{id}/respond` na Sprint 11 caso necessário.
-6. **Batch de Feedback:** Atualmente 1 a 1; futuro: endpoint `POST /api/feedbacks/bulk` para comentar múltiplas séries em lote.
+1. **TESTES:** Unit + Integration não implementados nesta sprint (reserva para Sprint 12). Recomendado: teste transacionalidade Feedback+Notification; teste resource-based autorização CanSendFeedback; teste aluno tentando editar/excluir feedback de outro → 403.
+2. **SignalR / Realtime:** Endpoints HTTP prontos; adicionar Hub (`/hubs/notifications`) e serviço de broadcast em `Create*FeedbackCommandHandler` e demais eventos (WorkoutCompleted etc).
+3. **Push mobile (FCM/APNs):** Serviço `IPushNotificationService` integrado ao Notification side-effect — fora do MVP.
+4. **Mídia em Feedback:** Campo `MediaReferenceUrl` preparado; conectar com `IFileStorageService` (Sprint 11/12) + endpoint `POST /api/feedbacks/media` para upload.
+5. **Resposta do Aluno em Nível Sessão/Série:** Atualmente só ExerciseFeedback tem resposta; estender `StudentResponseText` para WorkoutFeedback e SetFeedback se necessário.
+6. **Batch de Feedback:** Endpoint `POST /api/feedbacks/bulk` para comentar múltiplas séries/exercícios de uma vez.
+7. **Notificações para outros eventos:** Implementar hooks em `FinishWorkoutSessionCommandHandler` (tipo `WorkoutCompleted`) e `AssignToStudentTrainingPlanCommandHandler` (tipo `PlanAssigned`).
 
 ### PRÓXIMA ETAPA RECOMENDADA:
 
-**Sprint 11 — Gamificação: Pontos, Níveis, Conquistas e Sequências (Streaks avançadas)** — alinhado a ROADMAP.md linha 16 e PROJECT_SPEC.md item 10. Histórias de referência:
+**Sprint 11 — Gamificação: Pontos, Níveis, Conquistas e Sequências (Streaks avançadas)** — alinhado a ROADMAP.md linha 16 e PROJECT_SPEC.md seção "Gamificação" (item 7 do núcleo MVP). Histórias de referência:
 
-- **US-1101** Transação de pontos por ações (concluir treino, completar série, ler feedback, 3 dias consecutivos etc.)
+- **US-1101** Transação de pontos por ações (concluir treino, completar série, ler feedback, 3 dias consecutivos etc.) → integração opcional com evento de leitura de feedback já capturado por `MarkFeedbackRead`
 - **US-1102** Níveis e XP com curva parametrizada
 - **US-1103** Conquistas/achievements (primeiro treino, 10 treinos, primeira semana completa, record pessoal etc.)
 - **US-1104** Streaks integrados com gamificação (streak 7 dias = pontos bonus, 30 dias = conquista)

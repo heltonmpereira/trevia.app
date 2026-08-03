@@ -156,7 +156,14 @@ public sealed class GetMyNotificationsQueryHandler
                 n.IsRead, n.CreatedAt, n.ReadAt))
             .ToListAsync(ct);
 
-        return new PaginatedResponse<NotificationResponse>(items, q.Page, q.PageSize, total);
+        return new PaginatedResponse<NotificationResponse>
+        {
+            Items = items,
+            TotalCount = total,
+            PageIndex = q.Page,
+            PageSize = q.PageSize,
+            HasNextPage = (q.Page * q.PageSize) < total
+        };
     }
 }
 
