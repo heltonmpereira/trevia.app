@@ -30,6 +30,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", isEnabled: true);
+        AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", isEnabled: false);
+
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<AdminSeedOptions>(configuration.GetSection("AdminSeed"));
         services.Configure<LocalFileStorageOptions>(configuration.GetSection("FileStorage"));

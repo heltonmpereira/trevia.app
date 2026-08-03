@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Domain.Coaching;
 using TreviaApp.Domain.Exercises;
@@ -19,6 +20,12 @@ using TreviaApp.Infrastructure.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
 {
+    static ApplicationDbContext()
+    {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", isEnabled: true);
+        AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", isEnabled: false);
+    }
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -60,8 +67,42 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
+        NormalizeTimestampsToUtc();
         UpdateTimestamps();
         return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void NormalizeTimestampsToUtc()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            foreach (var prop in entry.Properties)
+            {
+                if (prop.Metadata.ClrType == typeof(DateTimeOffset) ||
+                    prop.Metadata.ClrType == typeof(DateTimeOffset?))
+                {
+                    var current = prop.CurrentValue;
+                    if (current is DateTimeOffset dto && dto.Offset != TimeSpan.Zero)
+                    {
+                        prop.CurrentValue = dto.UtcDateTime;
+                    }
+                }
+                else if (prop.Metadata.ClrType == typeof(DateTime) ||
+                         prop.Metadata.ClrType == typeof(DateTime?))
+                {
+                    if (prop.CurrentValue is DateTime dt)
+                    {
+                        if (dt.Kind == DateTimeKind.Local)
+                            prop.CurrentValue = dt.ToUniversalTime();
+                        else if (dt.Kind == DateTimeKind.Unspecified)
+                            prop.CurrentValue = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    }
+                }
+            }
+        }
     }
 
     private void UpdateTimestamps()

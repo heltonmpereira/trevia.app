@@ -6,6 +6,9 @@ using TreviaApp.Infrastructure.Persistence.Seeder;
 using TreviaApp.Application.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", isEnabled: true);
+AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", isEnabled: false);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, cfg) => cfg
