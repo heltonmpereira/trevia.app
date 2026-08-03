@@ -81,17 +81,16 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
 
             foreach (var prop in entry.Properties)
             {
-                if (prop.Metadata.ClrType == typeof(DateTimeOffset) ||
-                    prop.Metadata.ClrType == typeof(DateTimeOffset?))
+                var clrType = Nullable.GetUnderlyingType(prop.Metadata.ClrType) ?? prop.Metadata.ClrType;
+
+                if (clrType == typeof(DateTimeOffset))
                 {
-                    var current = prop.CurrentValue;
-                    if (current is DateTimeOffset dto && dto.Offset != TimeSpan.Zero)
+                    if (prop.CurrentValue is DateTimeOffset dto && dto.Offset != TimeSpan.Zero)
                     {
-                        prop.CurrentValue = dto.UtcDateTime;
+                        prop.CurrentValue = new DateTimeOffset(dto.UtcDateTime, TimeSpan.Zero);
                     }
                 }
-                else if (prop.Metadata.ClrType == typeof(DateTime) ||
-                         prop.Metadata.ClrType == typeof(DateTime?))
+                else if (clrType == typeof(DateTime))
                 {
                     if (prop.CurrentValue is DateTime dt)
                     {

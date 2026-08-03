@@ -1,12 +1,14 @@
 @using TreviaApp.Client.Components
 @using TreviaApp.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IWorkoutOfflineStorage WorkoutStorage
 @inject ICurrentUserIdProvider UserIdProvider
 @implements IAsyncDisposable
 
+<CascadingAuthenticationState>
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
@@ -19,6 +21,7 @@
 <ResumeWorkoutModal @ref="_resumeModal"
                     OnResume="HandleResumeWorkout"
                     OnDiscard="HandleDiscardWorkout" />
+</CascadingAuthenticationState>
 
 @code {
     private ResumeWorkoutModal? _resumeModal;
