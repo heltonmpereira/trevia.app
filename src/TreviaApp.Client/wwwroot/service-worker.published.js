@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'treviaapp-cache-v2';
+const CACHE_VERSION = 'treviaapp-cache-v3';
 const ASSETS_CACHE = `${CACHE_VERSION}-assets`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 

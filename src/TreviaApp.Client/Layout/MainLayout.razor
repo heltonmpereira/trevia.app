@@ -46,13 +46,27 @@
 </div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        AuthService.AuthenticationChangedAsync += OnAuthChanged;
+    }
+
+    private async Task OnAuthChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void GoToProfile() => Nav.NavigateTo("profile");
 
     private async Task LogoutAsync()
     {
         try { await AuthService.LogoutAsync(); } catch { }
-        Nav.NavigateTo("login", forceLoad: true);
+        Nav.NavigateTo("login", forceLoad: false);
     }
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        AuthService.AuthenticationChangedAsync -= OnAuthChanged;
+        return ValueTask.CompletedTask;
+    }
 }

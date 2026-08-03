@@ -1,9 +1,14 @@
 @using TreviaApp.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using TreviaApp.Client.Services.Auth
 
 @inject ISyncQueue SyncQueue
 @inject ICurrentUserIdProvider UserIdProvider
+@inject IAuthService AuthService
 @implements IAsyncDisposable
 
+@if (_isAuthenticated)
+{
 <div class="sync-indicator @_indicatorClass" title="@_tooltipText" @onclick="HandleClick">
     <span class="sync-icon">@_currentIcon</span>
     @if (_showText && _count > 0)
@@ -59,6 +64,7 @@
             </div>
         }
     </div>
+}
 }
 
 <style>
@@ -181,6 +187,7 @@
     private SyncStatusSummary? _status;
     private bool _showDetailPanel;
     private string? _userId;
+    private bool _isAuthenticated;
     private System.Threading.Timer? _pollTimer;
 
     private bool _showText => ShowText;
@@ -226,13 +233,47 @@
             _ => "Tudo sincronizado com sucesso"
         };
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        AuthService.AuthenticationChangedAsync += OnAuthenticationChanged;
+        await CheckAuthAndInitAsync();
+    }
+
+    private async Task OnAuthenticationChanged()
+    {
+        await CheckAuthAndInitAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckAuthAndInitAsync()
+    {
+        _isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (_isAuthenticated)
         {
             SyncQueue.OnStatusChanged += HandleStatusChanged;
-            _userId = await UserIdProvider.GetCurrentUserIdAsync() ?? "anonymous";
+            _userId = await UserIdProvider.GetCurrentUserIdAsync();
+            _pollTimer ??= new System.Threading.Timer(async _ => await RefreshStatus(), null, 0, 8000);
+            await RefreshStatus();
+        }
+        else
+        {
+            SyncQueue.OnStatusChanged -= HandleStatusChanged;
+            _pollTimer?.Dispose();
+            _pollTimer = null;
+            _userId = null;
+            _status = null;
+            _showDetailPanel = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _isAuthenticated && _pollTimer == null)
+        {
+            SyncQueue.OnStatusChanged += HandleStatusChanged;
+            _userId = await UserIdProvider.GetCurrentUserIdAsync() ?? _userId;
             _pollTimer = new System.Threading.Timer(async _ => await RefreshStatus(), null, 0, 8000);
+            await RefreshStatus();
         }
     }
 
@@ -243,7 +284,7 @@
 
     private async Task RefreshStatus()
     {
-        if (string.IsNullOrEmpty(_userId)) return;
+        if (!_isAuthenticated || string.IsNullOrEmpty(_userId)) return;
         _status = await SyncQueue.GetStatusSummaryAsync(_userId);
         await InvokeAsync(StateHasChanged);
     }
@@ -275,6 +316,7 @@
 
     public ValueTask DisposeAsync()
     {
+        AuthService.AuthenticationChangedAsync -= OnAuthenticationChanged;
         SyncQueue.OnStatusChanged -= HandleStatusChanged;
         _pollTimer?.Dispose();
         return ValueTask.CompletedTask;

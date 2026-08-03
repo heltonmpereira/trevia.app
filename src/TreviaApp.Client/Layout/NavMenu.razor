@@ -1,4 +1,8 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using TreviaApp.Client.Services.Auth
+@inject IAuthService AuthService
+@implements IAsyncDisposable
+
 <AuthorizeView>
     <Authorized>
     <div class="top-row ps-3 navbar navbar-dark">
@@ -102,8 +106,24 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    protected override void OnInitialized()
+    {
+        AuthService.AuthenticationChangedAsync += OnAuthChanged;
+    }
+
+    private async Task OnAuthChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        AuthService.AuthenticationChangedAsync -= OnAuthChanged;
+        return ValueTask.CompletedTask;
     }
 }
