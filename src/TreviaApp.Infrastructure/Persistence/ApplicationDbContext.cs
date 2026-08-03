@@ -9,9 +9,11 @@ using TreviaApp.Domain.Coaching;
 using TreviaApp.Domain.Exercises;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
+using TreviaApp.Domain.Notifications;
 using TreviaApp.Domain.Profiles;
 using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Domain.WorkoutExecution;
+using TreviaApp.Domain.WorkoutExecution.Feedback;
 using TreviaApp.Infrastructure.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
@@ -39,6 +41,10 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<WorkoutExercise> WorkoutExercises => Set<WorkoutExercise>();
     public DbSet<WorkoutSet> WorkoutSets => Set<WorkoutSet>();
     public DbSet<WorkoutPause> WorkoutPauses => Set<WorkoutPause>();
+    public DbSet<WorkoutFeedback> WorkoutFeedbacks => Set<WorkoutFeedback>();
+    public DbSet<ExerciseFeedback> ExerciseFeedbacks => Set<ExerciseFeedback>();
+    public DbSet<SetFeedback> SetFeedbacks => Set<SetFeedback>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -87,6 +93,10 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         builder.Entity<WorkoutExercise>().HasQueryFilter(w => !w.IsDeleted);
         builder.Entity<WorkoutSet>().HasQueryFilter(w => !w.IsDeleted);
         builder.Entity<WorkoutPause>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<WorkoutFeedback>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<ExerciseFeedback>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<SetFeedback>().HasQueryFilter(w => !w.IsDeleted);
+        builder.Entity<Notification>().HasQueryFilter(n => !n.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

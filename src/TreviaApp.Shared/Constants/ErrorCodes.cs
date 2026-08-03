@@ -257,4 +257,34 @@ public static class ErrorCodes
     /// Gets the constant value for Workout Week Number Invalid.
     /// </summary>
     public const string WorkoutWeekNumberInvalid = nameof(WorkoutWeekNumberInvalid);
+
+    /// <summary>
+    /// Gets the constant value for Feedback Not Found.
+    /// </summary>
+    public const string FeedbackNotFound = nameof(FeedbackNotFound);
+    /// <summary>
+    /// Gets the constant value for Feedback Forbidden.
+    /// </summary>
+    public const string FeedbackForbidden = nameof(FeedbackForbidden);
+    /// <summary>
+    /// Gets the constant value for Feedback Cannot Send No Permission.
+    /// </summary>
+    public const string FeedbackCannotSendNoPermission = nameof(FeedbackCannotSendNoPermission);
+    /// <summary>
+    /// Gets the constant value for Feedback Text Too Long.
+    /// </summary>
+    public const string FeedbackTextTooLong = nameof(FeedbackTextTooLong);
+    /// <summary>
+    /// Gets the constant value for Feedback Empty.
+    /// </summary>
+    public const string FeedbackEmpty = nameof(FeedbackEmpty);
+
+    /// <summary>
+    /// Gets the constant value for Notification Not Found.
+    /// </summary>
+    public const string NotificationNotFound = nameof(NotificationNotFound);
+    /// <summary>
+    /// Gets the constant value for Notification Not Owner.
+    /// </summary>
+    public const string NotificationNotOwner = nameof(NotificationNotOwner);
 }
