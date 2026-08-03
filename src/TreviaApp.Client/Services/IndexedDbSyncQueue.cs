@@ -7,8 +7,6 @@ public class IndexedDbSyncQueue : ISyncQueue, IAsyncDisposable
 {
     private readonly IJSRuntime _jsRuntime;
     private readonly Lazy<Task<IJSObjectReference>> _moduleTask;
-    private IDisposable? _onlineListenerJs;
-    private DotNetObjectReference<IndexedDbSyncQueue>? _dotNetRef;
 
     public event Action? OnStatusChanged;
 
@@ -37,7 +35,7 @@ public class IndexedDbSyncQueue : ISyncQueue, IAsyncDisposable
             var module = await _moduleTask.Value;
             await module.InvokeVoidAsync("enqueueSync", item);
         }
-        catch (Exception ex)
+        catch
         {
             try
             {
@@ -209,7 +207,5 @@ public class IndexedDbSyncQueue : ISyncQueue, IAsyncDisposable
             try { await (await _moduleTask.Value).DisposeAsync(); }
             catch (JSException) { }
         }
-        _onlineListenerJs?.Dispose();
-        _dotNetRef?.Dispose();
     }
 }

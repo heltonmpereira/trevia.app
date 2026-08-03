@@ -1,0 +1,642 @@
+@page "/trainingplans"
+@using TreviaApp.Client.Services
+@using TreviaApp.Contracts.TrainingPlans.Requests
+@using TreviaApp.Contracts.TrainingPlans.Responses
+@using TreviaApp.Shared.Enums
+
+@inject ITrainingPlansService PlanService
+@inject NavigationManager Nav
+
+<PageTitle>Planos de Treino</PageTitle>
+
+<div class="container py-4">
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            @_errorMessage
+            <button type="button" class="btn-close" @onclick="() => _errorMessage = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            @_successMessage
+            <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+        </div>
+    }
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h1 class="mb-0">Planos de Treino</h1>
+        <button class="btn btn-primary" @onclick="ToggleCreateForm">
+            <i class="bi bi-plus-lg me-1"></i>
+            @(_showCreateForm ? "Fechar Formulário" : "Criar Novo Plano")
+        </button>
+    </div>
+
+    @if (_showCreateForm)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-plus me-2"></i>Novo Plano de Treino</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @(_validationErrors.ContainsKey("Name") ? "is-invalid" : "")"
+                               @bind="_formName" @bind:event="oninput"
+                               placeholder="Ex: Hipertrofia Iniciante" />
+                        @if (_validationErrors.ContainsKey("Name"))
+                        {
+                            <div class="invalid-feedback">@_validationErrors["Name"]</div>
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Divisão <span class="text-danger">*</span></label>
+                        <select class="form-select @(_validationErrors.ContainsKey("SplitType") ? "is-invalid" : "")"
+                                @bind="_formSplitType">
+                            @foreach (var split in Enum.GetValues<TrainingSplitType>())
+                            {
+                                <option value="@split">@split</option>
+                            }
+                        </select>
+                        @if (_validationErrors.ContainsKey("SplitType"))
+                        {
+                            <div class="invalid-feedback">@_validationErrors["SplitType"]</div>
+                        }
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Descrição</label>
+                        <textarea class="form-control" rows="2"
+                                  @bind="_formDescription" @bind:event="oninput"
+                                  placeholder="Descreva o objetivo e foco do plano..."></textarea>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label fw-semibold">Semanas</label>
+                        <input type="number" class="form-control" min="1" max="52"
+                               @bind="_formTotalWeeks" />
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label fw-semibold">Sessões/Semana</label>
+                        <input type="number" class="form-control" min="1" max="7"
+                               @bind="_formSessionsPerWeek" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Semana Atual</label>
+                        <input type="number" class="form-control" min="1" max="52"
+                               @bind="_currentWeekCreate" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Tags</label>
+                        <input type="text" class="form-control"
+                               @bind="_formTags" @bind:event="oninput"
+                               placeholder="Ex: hipertrofia, iniciante, musculação (separadas por vírgula)" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Visibilidade</label>
+                        <select class="form-select" @bind="_formVisibility">
+                            @foreach (var vis in Enum.GetValues<Visibility>())
+                            {
+                                <option value="@vis">@vis</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetCreateForm">
+                                Cancelar
+                            </button>
+                            <button type="button" class="btn btn-primary" @onclick="SubmitCreateForm" disabled="@_actionLoading">
+                                @if (_actionLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Criar Plano
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(_activeTab == "my" ? "active" : "")"
+                    @onclick='() => _activeTab = "my"'
+                    type="button" role="tab">
+                <i class="bi bi-person me-1"></i>Meus Planos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(_activeTab == "public" ? "active" : "")"
+                    @onclick="@LoadPublicTemplates"
+                    type="button" role="tab">
+                <i class="bi bi-globe me-1"></i>Biblioteca Pública
+            </button>
+        </li>
+    </ul>
+
+    @if (_activeTab == "my")
+    {
+        if (_loadingMyPlans)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        }
+        else if (_myPlans == null || !_myPlans.Any())
+        {
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center py-5">
+                    <div class="display-4 mb-3 text-muted">
+                        <i class="bi bi-folder-x"></i>
+                    </div>
+                    <h5 class="text-muted">Nenhum plano criado</h5>
+                    <p class="text-muted small mb-4">Crie seu primeiro plano de treino ou explore a biblioteca pública.</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn btn-primary" @onclick="ToggleCreateForm">
+                            <i class="bi bi-plus me-1"></i>Criar Plano
+                        </button>
+                        <button class="btn btn-outline-primary" @onclick='() => { _activeTab = "public"; _ = LoadPublicTemplates(); }'>
+                            <i class="bi bi-globe me-1"></i>Explorar Biblioteca
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Status</th>
+                                <th>Divisão</th>
+                                <th>Semanas/Sessões</th>
+                                <th>Tags</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plan in _myPlans)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@plan.Name</div>
+                                        @if (!string.IsNullOrEmpty(plan.Description))
+                                        {
+                                            <small class="text-muted d-block text-truncate" style="max-width: 280px;">@plan.Description</small>
+                                        }
+                                        <small class="text-muted">
+                                            Criado em @plan.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                        </small>
+                                    </td>
+                                    <td>@RenderPlanBadge(plan.Status)</td>
+                                    <td><span class="badge bg-light text-dark">@plan.SplitType</span></td>
+                                    <td>
+                                        <div class="small">
+                                            @if (plan.TotalWeeks.HasValue)
+                                            {
+                                                <span class="fw-semibold">@plan.TotalWeeks.Value semanas</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </div>
+                                        <div class="small text-muted">@plan.TotalSessions sessões</div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(plan.CreatedByName))
+                                        {
+                                            <small class="text-muted">Por: @plan.CreatedByName</small>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ViewPlanDetails(plan.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (plan.Status == TrainingPlanStatus.Active || plan.Status == TrainingPlanStatus.Assigned)
+                                            {
+                                                <button class="btn btn-outline-warning btn-sm" @onclick="@(() => PausePlan(plan.Id))" disabled="@_actionLoading">
+                                                    <i class="bi bi-pause"></i>
+                                                </button>
+                                            }
+                                            @if (plan.Status == TrainingPlanStatus.Paused)
+                                            {
+                                                <button class="btn btn-outline-success btn-sm" @onclick="@(() => ResumePlan(plan.Id))" disabled="@_actionLoading">
+                                                    <i class="bi bi-play"></i>
+                                                </button>
+                                            }
+                                            @if (plan.Status != TrainingPlanStatus.Archived)
+                                            {
+                                                <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ArchivePlan(plan.Id))" disabled="@_actionLoading">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-info btn-sm" @onclick="@(() => DuplicatePlan(plan.Id))" disabled="@_actionLoading">
+                                                <i class="bi bi-files"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (_myTotalCount > _myPlans.Count)
+                {
+                    <div class="card-footer text-center py-3">
+                        <button class="btn btn-outline-secondary" @onclick="LoadMoreMyPlans" disabled="@_loadingMyPlans">
+                            @if (_loadingMyPlans) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Carregar mais
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    @if (_activeTab == "public")
+    {
+        @if (_loadingPublic)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        }
+        else if (_publicPlans == null || !_publicPlans.Any())
+        {
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center py-5">
+                    <div class="display-4 mb-3 text-muted">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                    <h5 class="text-muted">Nenhum template público</h5>
+                    <p class="text-muted small mb-4">A biblioteca pública está vazia no momento.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Status</th>
+                                <th>Divisão</th>
+                                <th>Semanas/Sessões</th>
+                                <th>Criado por</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plan in _publicPlans)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@plan.Name</div>
+                                        @if (!string.IsNullOrEmpty(plan.Description))
+                                        {
+                                            <small class="text-muted d-block text-truncate" style="max-width: 280px;">@plan.Description</small>
+                                        }
+                                    </td>
+                                    <td>@RenderPlanBadge(plan.Status)</td>
+                                    <td><span class="badge bg-light text-dark">@plan.SplitType</span></td>
+                                    <td>
+                                        <div class="small">
+                                            @if (plan.TotalWeeks.HasValue)
+                                            {
+                                                <span class="fw-semibold">@plan.TotalWeeks.Value semanas</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </div>
+                                        <div class="small text-muted">@plan.TotalSessions sessões</div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@plan.CreatedByName</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ViewPlanDetails(plan.Id))">
+                                                <i class="bi bi-eye me-1"></i>Detalhes
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" @onclick="@(() => DuplicatePlan(plan.Id))" disabled="@_actionLoading">
+                                                <i class="bi bi-files"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (_publicTotalCount > _publicPlans.Count)
+                {
+                    <div class="card-footer text-center py-3">
+                        <button class="btn btn-outline-secondary" @onclick="LoadMorePublicPlans" disabled="@_loadingPublic">
+                            @if (_loadingPublic) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Carregar mais
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private string _activeTab = "my";
+    private bool _showCreateForm;
+    private bool _loadingMyPlans;
+    private bool _loadingPublic;
+    private bool _actionLoading;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private int _currentWeekCreate = 1;
+
+    private string _formName = "";
+    private string? _formDescription;
+    private TrainingSplitType _formSplitType = TrainingSplitType.FullBody;
+    private Visibility _formVisibility = Visibility.Private;
+    private int? _formTotalWeeks = 8;
+    private int? _formSessionsPerWeek = 3;
+    private string? _formTags;
+
+    private Dictionary<string, string> _validationErrors = new();
+
+    private List<TrainingPlanSummaryResponse> _myPlans = new();
+    private int _myPage = 1;
+    private int _myTotalCount;
+
+    private List<TrainingPlanSummaryResponse> _publicPlans = new();
+    private int _publicPage = 1;
+    private int _publicTotalCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMyPlans(1);
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreateForm = !_showCreateForm;
+        if (_showCreateForm)
+        {
+            ResetCreateForm();
+        }
+    }
+
+    private void ResetCreateForm()
+    {
+        _formName = "";
+        _formDescription = null;
+        _formSplitType = TrainingSplitType.FullBody;
+        _formVisibility = Visibility.Private;
+        _formTotalWeeks = 8;
+        _formSessionsPerWeek = 3;
+        _formTags = null;
+        _currentWeekCreate = 1;
+        _validationErrors.Clear();
+    }
+
+    private bool ValidateCreateForm()
+    {
+        _validationErrors.Clear();
+        if (string.IsNullOrWhiteSpace(_formName))
+            _validationErrors["Name"] = "O nome do plano é obrigatório.";
+        else if (_formName.Length < 3)
+            _validationErrors["Name"] = "O nome deve ter pelo menos 3 caracteres.";
+        else if (_formName.Length > 100)
+            _validationErrors["Name"] = "O nome deve ter no máximo 100 caracteres.";
+
+        if (!Enum.IsDefined(_formSplitType))
+            _validationErrors["SplitType"] = "Selecione uma divisão válida.";
+
+        if (_formTotalWeeks.HasValue && (_formTotalWeeks < 1 || _formTotalWeeks > 52))
+            _validationErrors["TotalWeeks"] = "Semanas deve ser entre 1 e 52.";
+
+        if (_formSessionsPerWeek.HasValue && (_formSessionsPerWeek < 1 || _formSessionsPerWeek > 7))
+            _validationErrors["SessionsPerWeek"] = "Sessões por semana deve ser entre 1 e 7.";
+
+        return _validationErrors.Count == 0;
+    }
+
+    private async Task SubmitCreateForm()
+    {
+        if (!ValidateCreateForm()) return;
+
+        _actionLoading = true;
+        try
+        {
+            var createRequest = new CreateTrainingPlanRequest(
+                Name: _formName,
+                Description: _formDescription,
+                InstructionsIntro: null,
+                NotesForStudent: null,
+                SplitType: _formSplitType,
+                Visibility: _formVisibility,
+                TotalWeeks: _formTotalWeeks,
+                SessionsPerWeek: _formSessionsPerWeek,
+                TargetVolume: null,
+                Tags: _formTags);
+
+            var result = await PlanService.Create(createRequest);
+            _successMessage = $"Plano \"{result.Name}\" criado com sucesso!";
+            _showCreateForm = false;
+            ResetCreateForm();
+            await LoadMyPlans(1);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao criar plano: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task LoadMyPlans(int page)
+    {
+        _loadingMyPlans = true;
+        try
+        {
+            var response = await PlanService.GetMyPlans(page: page, pageSize: 12);
+            if (page == 1)
+                _myPlans = response.Items.ToList();
+            else
+                _myPlans.AddRange(response.Items);
+            _myTotalCount = response.TotalCount;
+            _myPage = page;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar meus planos: {ex.Message}";
+        }
+        finally
+        {
+            _loadingMyPlans = false;
+        }
+    }
+
+    private async Task LoadMoreMyPlans()
+    {
+        await LoadMyPlans(_myPage + 1);
+    }
+
+    private async Task LoadPublicTemplates()
+    {
+        _activeTab = "public";
+        if (_publicPlans.Any()) return;
+        _loadingPublic = true;
+        try
+        {
+            var response = await PlanService.SearchPublicTemplates(page: 1, pageSize: 12);
+            _publicPlans = response.Items.ToList();
+            _publicTotalCount = response.TotalCount;
+            _publicPage = 1;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar biblioteca pública: {ex.Message}";
+        }
+        finally
+        {
+            _loadingPublic = false;
+        }
+    }
+
+    private async Task LoadMorePublicPlans()
+    {
+        _loadingPublic = true;
+        try
+        {
+            var response = await PlanService.SearchPublicTemplates(page: _publicPage + 1, pageSize: 12);
+            _publicPlans.AddRange(response.Items);
+            _publicTotalCount = response.TotalCount;
+            _publicPage++;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar mais planos: {ex.Message}";
+        }
+        finally
+        {
+            _loadingPublic = false;
+        }
+    }
+
+    private void ViewPlanDetails(Guid id)
+    {
+        Nav.NavigateTo($"/trainingplans/{id}");
+    }
+
+    private async Task PausePlan(Guid id)
+    {
+        _actionLoading = true;
+        try
+        {
+            var result = await PlanService.Pause(id);
+            _successMessage = $"Plano \"{result.Name}\" pausado.";
+            await LoadMyPlans(1);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao pausar plano: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task ResumePlan(Guid id)
+    {
+        _actionLoading = true;
+        try
+        {
+            var result = await PlanService.Resume(id);
+            _successMessage = $"Plano \"{result.Name}\" retomado.";
+            await LoadMyPlans(1);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao retomar plano: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task ArchivePlan(Guid id)
+    {
+        _actionLoading = true;
+        try
+        {
+            var result = await PlanService.Archive(id);
+            _successMessage = $"Plano \"{result.Name}\" arquivado.";
+            await LoadMyPlans(1);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao arquivar plano: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task DuplicatePlan(Guid id)
+    {
+        _actionLoading = true;
+        try
+        {
+            var request = new DuplicatePlanRequest { };
+            var result = await PlanService.Duplicate(id, request);
+            _successMessage = $"Plano duplicado como \"{result.Name}\".";
+            await LoadMyPlans(1);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao duplicar plano: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private static object RenderPlanBadge(TrainingPlanStatus status)
+    {
+        return status switch
+        {
+            TrainingPlanStatus.Draft => (object)new MarkupString("<span class=\"badge bg-secondary\">Rascunho</span>"),
+            TrainingPlanStatus.Assigned => new MarkupString("<span class=\"badge bg-info text-dark\">Atribuído</span>"),
+            TrainingPlanStatus.Active => new MarkupString("<span class=\"badge bg-success\">Ativo</span>"),
+            TrainingPlanStatus.Completed => new MarkupString("<span class=\"badge bg-primary\">Concluído</span>"),
+            TrainingPlanStatus.Paused => new MarkupString("<span class=\"badge bg-warning text-dark\">Pausado</span>"),
+            TrainingPlanStatus.Cancelled => new MarkupString("<span class=\"badge bg-danger\">Cancelado</span>"),
+            TrainingPlanStatus.Published => new MarkupString("<span class=\"badge bg-success\">Publicado</span>"),
+            TrainingPlanStatus.Archived => new MarkupString("<span class=\"badge bg-secondary\">Arquivado</span>"),
+            _ => new MarkupString($"<span class=\"badge bg-secondary\">{status}</span>")
+        };
+    }
+}

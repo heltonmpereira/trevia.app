@@ -1,0 +1,711 @@
+@page "/profile"
+@using TreviaApp.Contracts.Authentication
+@using TreviaApp.Contracts.Profiles.Requests
+@using TreviaApp.Contracts.Profiles.Responses
+@using TreviaApp.Shared.Enums
+@inject IProfileService profiles
+@inject TreviaApp.Client.Services.Auth.IAuthService auth
+
+<PageTitle>Perfil</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Meu Perfil</h1>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    }
+    else if (profile == null)
+    {
+        <div class="alert alert-warning">Perfil não encontrado.</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            @if (profile.Photo != null && profile.Photo.Id != Guid.Empty)
+                            {
+                                <div class="position-relative d-inline-block">
+                                    <div class="rounded-circle bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center overflow-hidden" style="width:150px;height:150px;">
+                                        <span class="display-4 text-muted">📷</span>
+                                    </div>
+                                </div>
+                                <div class="mt-2 d-flex gap-2 justify-content-center">
+                                    <label class="btn btn-sm btn-outline-primary mb-0">
+                                        📁 Trocar Foto
+                                        <InputFile class="d-none" OnChange="UploadPhoto" accept="image/*" />
+                                    </label>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="RemovePhoto">
+                                        🗑 Remover
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center mx-auto mb-2" style="width:150px;height:150px;">
+                                    <span class="display-3 text-muted">👤</span>
+                                </div>
+                                <label class="btn btn-sm btn-primary mb-0">
+                                    📁 Enviar Foto
+                                    <InputFile class="d-none" OnChange="UploadPhoto" accept="image/*" />
+                                </label>
+                            }
+                        </div>
+                        <h4 class="mb-1">@profile.DisplayName</h4>
+                        <small class="text-muted">
+                            @profile.Goal · @profile.Experience · @profile.PreferredEnvironment
+                        </small>
+                        <div class="mt-3 small text-muted">
+                            <div>Criado em: @profile.CreatedAt.ToString("dd/MM/yyyy")</div>
+                            <div>Atualizado em: @profile.UpdatedAt.ToString("dd/MM/yyyy")</div>
+                            @if (profile.LatestWeightKg.HasValue)
+                            {
+                                <div>Peso atual: @profile.LatestWeightKg.Value.ToString("F1") kg</div>
+                            }
+                            @if (profile.LatestHeightCm.HasValue)
+                            {
+                                <div>Altura: @profile.LatestHeightCm.Value.ToString("F0") cm</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Editar Perfil</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Objetivo</label>
+                                <select class="form-select" @bind="editGoal">
+                                    @foreach (var g in Enum.GetValues<TrainingGoal>())
+                                    {
+                                        <option value="@g">@g</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Experiência</label>
+                                <select class="form-select" @bind="editExperience">
+                                    @foreach (var e in Enum.GetValues<ExperienceLevel>())
+                                    {
+                                        <option value="@e">@e</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ambiente Preferido</label>
+                                <select class="form-select" @bind="editEnvironment">
+                                    @foreach (var e in Enum.GetValues<TrainingEnvironment>())
+                                    {
+                                        <option value="@e">@e</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nível de Privacidade</label>
+                                <select class="form-select" @bind="editPrivacy">
+                                    @foreach (var p in Enum.GetValues<PrivacyLevel>())
+                                    {
+                                        <option value="@p">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Unidades Preferidas</label>
+                                <select class="form-select" @bind="editUnits">
+                                    <option value="metric">Métrico (kg, cm)</option>
+                                    <option value="imperial">Imperial (lb, in)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Bio</label>
+                                <textarea class="form-control" rows="3" @bind="editBio"></textarea>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" @onclick="SaveProfile">💾 Salvar Alterações</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link @(activeTab == "weight" ? "active" : "")" @onclick='() => SetTab("weight")'>Peso</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link @(activeTab == "measurements" ? "active" : "")" @onclick='() => SetTab("measurements")'>Medidas</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link @(activeTab == "equipment" ? "active" : "")" @onclick='() => SetTab("equipment")'>Equipamentos</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link @(activeTab == "security" ? "active" : "")" @onclick='() => SetTab("security")'>Segurança</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        @switch (activeTab)
+                        {
+                            case "weight":
+                                <h6 class="mb-3">Registrar Peso</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Peso (kg)</label>
+                                        <input type="number" step="0.01" class="form-control" @bind="weightKg" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Data</label>
+                                        <input type="date" class="form-control" @bind="weightDate" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Observação</label>
+                                        <input type="text" class="form-control" @bind="weightNote" />
+                                    </div>
+                                    <div class="col-md-2 align-self-end">
+                                        <button class="btn btn-success w-100" @onclick="SaveWeightEntry">+ Adicionar</button>
+                                    </div>
+                                </div>
+                                @if (weightHistory != null)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6>Histórico de Peso</h6>
+                                        <div class="small text-muted">
+                                            @if (weightHistory.StartingWeightKg.HasValue && weightHistory.LatestWeightKg.HasValue)
+                                            {
+                                                var change = weightHistory.ChangeKg ?? 0;
+                                                <span class="@(change > 0 ? "text-danger" : change < 0 ? "text-success" : "")">
+                                                    @(change > 0 ? "+" : "")@change.ToString("F1") kg
+                                                </span>
+                                                <span class="mx-2">·</span>
+                                            }
+                                            Total: @weightHistory.TotalCount registros
+                                        </div>
+                                    </div>
+                                    if (weightHistory.Entries.Count == 0)
+                                    {
+                                        <p class="text-muted text-center py-3">Nenhum registro de peso.</p>
+                                    }
+                                    else
+                                    {
+                                        <table class="table table-sm">
+                                            <thead><tr><th>Data</th><th>Peso</th><th>Observação</th><th></th></tr></thead>
+                                            <tbody>
+                                                @foreach (var w in weightHistory.Entries)
+                                                {
+                                                    <tr>
+                                                        <td>@w.MeasuredAt.ToString("dd/MM/yyyy")</td>
+                                                        <td><strong>@w.WeightKg.ToString("F1") kg</strong></td>
+                                                        <td class="text-muted">@w.Note</td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-outline-danger" @onclick="async () => await DeleteWeight(w.Id)">🗑</button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                }
+                                break;
+
+                            case "measurements":
+                                <h6 class="mb-3">Registrar Medidas</h6>
+                                <div class="row g-2 mb-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label small">Data</label>
+                                        <input type="date" class="form-control form-control-sm" @bind="measDate" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small">Altura (cm)</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measHeight" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Cintura</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measWaist" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Quadril</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measHip" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Peito</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measChest" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Braço Esq</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measArmL" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Braço Dir</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measArmR" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Coxa Esq</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measThighL" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Coxa Dir</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measThighR" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Panturrilha Esq</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measCalfL" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Panturrilha Dir</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measCalfR" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">% Gordura</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measBodyFat" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">% Água</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measWater" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">% Massa Magra</label>
+                                        <input type="number" step="0.1" class="form-control form-control-sm" @bind="measMuscle" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Observação</label>
+                                        <input type="text" class="form-control form-control-sm" @bind="measNote" />
+                                    </div>
+                                    <div class="col-md-12 text-end">
+                                        <button class="btn btn-success btn-sm" @onclick="SaveMeasurement">+ Adicionar Medidas</button>
+                                    </div>
+                                </div>
+                                @if (measurementHistory != null)
+                                {
+                                    <h6>Histórico de Medidas</h6>
+                                    if (measurementHistory.Entries.Count == 0)
+                                    {
+                                        <p class="text-muted text-center py-3">Nenhum registro de medidas.</p>
+                                    }
+                                    else
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Data</th>
+                                                        <th>Altura</th>
+                                                        <th>Cintura</th>
+                                                        <th>Quadril</th>
+                                                        <th>Peito</th>
+                                                        <th>Braços</th>
+                                                        <th>Coxas</th>
+                                                        <th>% Gord</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var m in measurementHistory.Entries)
+                                                    {
+                                                        <tr>
+                                                            <td>@m.MeasuredAt.ToString("dd/MM/yyyy")</td>
+                                                            <td>@m.HeightCm?.ToString("F0")</td>
+                                                            <td>@m.WaistCm?.ToString("F1")</td>
+                                                            <td>@m.HipCm?.ToString("F1")</td>
+                                                            <td>@m.ChestCm?.ToString("F1")</td>
+                                                            <td>@m.ArmLeftCm?.ToString("F1")/@m.ArmRightCm?.ToString("F1")</td>
+                                                            <td>@m.ThighLeftCm?.ToString("F1")/@m.ThighRightCm?.ToString("F1")</td>
+                                                            <td>@m.BodyFatPercent?.ToString("F1")</td>
+                                                            <td class="text-end">
+                                                                <button class="btn btn-sm btn-outline-danger" @onclick="async () => await DeleteMeasurement(m.Id)">🗑</button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                }
+                                break;
+
+                            case "equipment":
+                                <h6 class="mb-3">Meus Equipamentos</h6>
+                                <p class="small text-muted">Selecione os equipamentos que você tem disponível:</p>
+                                <div class="row g-2 mb-3">
+                                    @foreach (var eq in Enum.GetValues<Equipment>())
+                                    {
+                                        var isChecked = selectedEquipments.Contains(eq);
+                                        <div class="col-md-4 col-sm-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="eq_@eq" checked="@isChecked" @onchange="(e) => ToggleEquipment(eq, e.Value)" />
+                                                <label class="form-check-label" for="eq_@eq">@eq</label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <button class="btn btn-primary" @onclick="SaveEquipments">💾 Salvar Equipamentos</button>
+                                break;
+
+                            case "security":
+                                <h6 class="mb-3">Alterar Senha</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Senha Atual</label>
+                                        <input type="password" class="form-control" @bind="pwCurrent" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nova Senha</label>
+                                        <input type="password" class="form-control" @bind="pwNew" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Confirmar Nova Senha</label>
+                                        <input type="password" class="form-control" @bind="pwConfirm" />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button class="btn btn-warning" @onclick="ChangePassword">🔑 Alterar Senha</button>
+                                    </div>
+                                </div>
+                                <hr />
+                                <h6 class="mb-3">Sessões Ativas</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="RevokeAllSessions">
+                                        🚪 Revocar Todas as Sessões
+                                    </button>
+                                </div>
+                                @if (sessions == null || sessions.Sessions.Count == 0)
+                                {
+                                    <p class="text-muted text-center py-3">Nenhuma sessão ativa.</p>
+                                }
+                                else
+                                {
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Dispositivo</th><th>IP</th><th>Iniciada em</th><th></th></tr></thead>
+                                        <tbody>
+                                            @foreach (var s in sessions.Sessions)
+                                            {
+                                                <tr class="@(s.IsCurrent ? "table-success" : "")">
+                                                    <td>
+                                                        @s.Device
+                                                        @if (s.IsCurrent)
+                                                        {
+                                                            <span class="badge bg-success ms-1">Atual</span>
+                                                        }
+                                                    </td>
+                                                    <td>@s.IpAddress</td>
+                                                    <td>@s.StartedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td class="text-end">
+                                                        @if (!s.IsCurrent)
+                                                        {
+                                                            <button class="btn btn-sm btn-outline-danger" @onclick="async () => await RevokeSession(s.SessionId)">
+                                                                🚪 Encerrar
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private ProfileFullResponse? profile;
+    private string activeTab = "weight";
+
+    private TrainingGoal editGoal;
+    private ExperienceLevel editExperience;
+    private TrainingEnvironment editEnvironment;
+    private PrivacyLevel editPrivacy;
+    private string editUnits = "metric";
+    private string? editBio;
+
+    private WeightHistoryResponse? weightHistory;
+    private decimal weightKg;
+    private DateTime weightDate = DateTime.Now.Date;
+    private string? weightNote;
+
+    private MeasurementHistoryResponse? measurementHistory;
+    private DateTime measDate = DateTime.Now.Date;
+    private decimal? measHeight; private decimal? measWaist; private decimal? measHip; private decimal? measChest;
+    private decimal? measArmL; private decimal? measArmR; private decimal? measThighL; private decimal? measThighR;
+    private decimal? measCalfL; private decimal? measCalfR; private decimal? measBodyFat; private decimal? measWater;
+    private decimal? measMuscle; private string? measNote;
+
+    private HashSet<Equipment> selectedEquipments = new();
+
+    private string pwCurrent = "";
+    private string pwNew = "";
+    private string pwConfirm = "";
+    private UserSessionsResponse? sessions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            profile = await profiles.GetMyProfile();
+            if (profile != null)
+            {
+                editGoal = profile.Goal;
+                editExperience = profile.Experience;
+                editEnvironment = profile.PreferredEnvironment;
+                editPrivacy = profile.PrivacyLevel;
+                editUnits = profile.PreferredUnits;
+                editBio = profile.Bio;
+                selectedEquipments = new HashSet<Equipment>(profile.Equipments);
+            }
+            await LoadTabData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        errorMessage = null;
+        successMessage = null;
+        _ = LoadTabData();
+    }
+
+    private async Task LoadTabData()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            switch (activeTab)
+            {
+                case "weight":
+                    weightHistory = await profiles.GetWeightHistory();
+                    break;
+                case "measurements":
+                    measurementHistory = await profiles.GetMeasurementHistory();
+                    break;
+                case "security":
+                    sessions = await auth.GetActiveSessionsAsync();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task UploadPhoto(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+            await profiles.UploadProfilePhoto(ms, file.Name, file.ContentType);
+            profile = await profiles.GetMyProfile();
+            successMessage = "Foto atualizada!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro no upload: {ex.Message}";
+        }
+    }
+
+    private async Task RemovePhoto()
+    {
+        try
+        {
+            await profiles.RemoveProfilePhoto();
+            profile = await profiles.GetMyProfile();
+            successMessage = "Foto removida!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            profile = await profiles.UpdateProfile(new UpdateProfileRequest(editGoal, editExperience, editEnvironment, editPrivacy, editUnits, editBio));
+            successMessage = "Perfil salvo com sucesso!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task SaveWeightEntry()
+    {
+        try
+        {
+            var d = DateOnly.FromDateTime(weightDate);
+            var dt = new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            await profiles.UpsertWeightEntry(new UpsertWeightEntryRequest(null, weightKg, dt, weightNote));
+            weightKg = 0; weightNote = null;
+            weightHistory = await profiles.GetWeightHistory();
+            profile = await profiles.GetMyProfile();
+            successMessage = "Peso registrado!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private static Guid LongToGuid(long value)
+    {
+        var bytes = new byte[16];
+        BitConverter.GetBytes(value).CopyTo(bytes, 0);
+        return new Guid(bytes);
+    }
+
+    private async Task DeleteWeight(long id)
+    {
+        try
+        {
+            await profiles.DeleteWeightEntry(LongToGuid(id));
+            weightHistory = await profiles.GetWeightHistory();
+            profile = await profiles.GetMyProfile();
+            successMessage = "Registro removido.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task SaveMeasurement()
+    {
+        try
+        {
+            var d = DateOnly.FromDateTime(measDate);
+            var dt = new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            await profiles.UpsertMeasurement(new UpsertMeasurementRequest(null, dt, measHeight, measWaist, measHip, measChest,
+                measArmL, measArmR, measThighL, measThighR, measCalfL, measCalfR, measBodyFat, measWater, measMuscle, null, null, measNote));
+            measHeight = measWaist = measHip = measChest = measArmL = measArmR = measThighL = measThighR = measCalfL = measCalfR = null;
+            measBodyFat = measWater = measMuscle = null; measNote = null;
+            measurementHistory = await profiles.GetMeasurementHistory();
+            successMessage = "Medidas registradas!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteMeasurement(long id)
+    {
+        try
+        {
+            await profiles.DeleteMeasurement(LongToGuid(id));
+            measurementHistory = await profiles.GetMeasurementHistory();
+            successMessage = "Registro removido.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private void ToggleEquipment(Equipment eq, object? checkedValue)
+    {
+        if (checkedValue is bool isChecked)
+        {
+            if (isChecked) selectedEquipments.Add(eq);
+            else selectedEquipments.Remove(eq);
+        }
+    }
+
+    private async Task SaveEquipments()
+    {
+        try
+        {
+            await profiles.UpdateEquipments(new UpdateEquipmentsRequest(selectedEquipments));
+            profile = await profiles.GetMyProfile();
+            successMessage = "Equipamentos salvos!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        try
+        {
+            if (pwNew != pwConfirm) { errorMessage = "Nova senha e confirmação não conferem."; return; }
+            await auth.ChangePasswordAsync(new ChangePasswordRequest(pwCurrent, pwNew, pwConfirm));
+            pwCurrent = pwNew = pwConfirm = "";
+            successMessage = "Senha alterada!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task RevokeAllSessions()
+    {
+        try
+        {
+            await auth.RevokeAllSessionsAsync();
+            sessions = await auth.GetActiveSessionsAsync();
+            successMessage = "Todas as sessões foram revocadas.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task RevokeSession(string sessionId)
+    {
+        try
+        {
+            await auth.RevokeRefreshTokenAsync(new RevokeRefreshTokenRequest { RefreshToken = sessionId });
+            sessions = await auth.GetActiveSessionsAsync();
+            successMessage = "Sessão encerrada.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+}

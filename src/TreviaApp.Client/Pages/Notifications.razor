@@ -1,0 +1,240 @@
+@page "/notifications"
+@using TreviaApp.Contracts.Common
+@using TreviaApp.Contracts.Notifications.Responses
+@using TreviaApp.Shared.Enums
+@inject TreviaApp.Client.Services.Notifications.INotificationsService not
+
+<PageTitle>Notificações</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">
+            Notificações
+            @if (unreadCount > 0)
+            {
+                <span class="badge bg-danger ms-2">@unreadCount não lidas</span>
+            }
+        </h1>
+        <button class="btn btn-outline-primary" @onclick="MarkAllAsRead" disabled="@(unreadCount == 0)">
+            ✓ Ler todas
+        </button>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Página</label>
+                    <input type="number" class="form-control" min="1" value="@currentPage" @onchange="async (ChangeEventArgs e) => { currentPage = int.TryParse(e.Value?.ToString(), out var p) ? Math.Max(1, p) : 1; await LoadNotifications(); }" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tamanho da página</label>
+                    <select class="form-select" value="@pageSize" @onchange="async (ChangeEventArgs e) => { pageSize = int.TryParse(e.Value?.ToString(), out var s) ? s : 20; currentPage = 1; await LoadNotifications(); }">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="onlyUnread" checked="@onlyUnread" @onchange="async (ChangeEventArgs e) => { onlyUnread = (bool)e.Value!; currentPage = 1; await LoadNotifications(); }" />
+                        <label class="form-check-label" for="onlyUnread">Apenas não lidas</label>
+                    </div>
+                </div>
+                <div class="col-md-3 text-end">
+                    <small class="text-muted">
+                        Total: @(notifications?.TotalCount ?? 0)
+                        @if (notifications != null && notifications.TotalCount > 0)
+                        {
+                            <span> · Página @currentPage / @Math.Ceiling((double)notifications.TotalCount / pageSize)</span>
+                        }
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    }
+    else if (notifications == null || notifications.Items.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="display-4 text-muted mb-3">🔔</div>
+                <h5 class="text-muted">Nenhuma notificação encontrada</h5>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var n in notifications.Items)
+            {
+                <div class="list-group-item list-group-item-action @(n.IsRead ? "" : "bg-primary bg-opacity-5")">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge @TypeClass(n.Type)">@n.Type</span>
+                                @if (!n.IsRead)
+                                {
+                                    <span class="badge bg-danger">Nova</span>
+                                }
+                                <small class="text-muted">@n.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <h6 class="mb-1 @(n.IsRead ? "fw-normal text-muted" : "fw-bold")">@n.Title</h6>
+                            <p class="mb-0 small">@n.Message</p>
+                            @if (n.ReferenceType.HasValue)
+                            {
+                                <small class="text-muted">
+                                    Referência: @n.ReferenceType.Value (@n.ReferenceId)
+                                </small>
+                            }
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            @if (!n.IsRead)
+                            {
+                                <button class="btn btn-sm btn-outline-success" title="Marcar como lida" @onclick="async () => await MarkAsRead(n.Id)">
+                                    ✓
+                                </button>
+                            }
+                            <button class="btn btn-sm btn-outline-danger" title="Excluir" @onclick="async () => await Delete(n.Id)">
+                                🗑
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <button class="btn btn-outline-secondary" disabled="@(currentPage <= 1)" @onclick="async () => { currentPage--; await LoadNotifications(); }">
+                ← Anterior
+            </button>
+            <span class="text-muted">Mostrando @notifications.Items.Count de @notifications.TotalCount</span>
+            <button class="btn btn-outline-secondary" disabled="@(notifications == null || !notifications.HasNextPage)" @onclick="async () => { currentPage++; await LoadNotifications(); }">
+                Próxima →
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private int unreadCount;
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private bool onlyUnread;
+    private PaginatedResponse<NotificationResponse>? notifications;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadUnreadCount();
+            await LoadNotifications();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadUnreadCount()
+    {
+        var resp = await not.GetUnreadCount();
+        unreadCount = resp.UnreadCount;
+    }
+
+    private async Task LoadNotifications()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            notifications = await not.GetMyNotifications(currentPage, pageSize, onlyUnread);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao carregar notificações: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task MarkAsRead(Guid id)
+    {
+        try
+        {
+            await not.MarkAsRead(id);
+            await LoadUnreadCount();
+            await LoadNotifications();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            await not.MarkAllAsRead();
+            await LoadUnreadCount();
+            currentPage = 1;
+            await LoadNotifications();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task Delete(Guid id)
+    {
+        try
+        {
+            await not.DeleteNotification(id);
+            await LoadUnreadCount();
+            if (notifications != null && notifications.Items.Count == 1 && currentPage > 1)
+            {
+                currentPage--;
+            }
+            await LoadNotifications();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private static string TypeClass(NotificationType type) => type switch
+    {
+        NotificationType.FeedbackReceived => "bg-info",
+        NotificationType.WorkoutCompleted => "bg-success",
+        NotificationType.PlanAssigned => "bg-primary",
+        NotificationType.LinkAccepted => "bg-success",
+        NotificationType.LinkRevoked => "bg-warning text-dark",
+        NotificationType.CoachMessage => "bg-secondary",
+        _ => "bg-secondary"
+    };
+}

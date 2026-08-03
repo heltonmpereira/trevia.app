@@ -1,0 +1,447 @@
+@page "/dashboard"
+@inject NavigationManager Nav
+@inject TreviaApp.Client.Services.Auth.IAuthService Auth
+@inject TreviaApp.Client.Services.IGamificationService Gamification
+@inject TreviaApp.Client.Services.IWorkoutsService Workouts
+@inject TreviaApp.Client.Services.IReportsService Reports
+@inject TreviaApp.Client.Services.Notifications.INotificationsService Notifications
+
+@* [Authorize] - Não usar atributo, validação manual abaixo *@
+
+@using TreviaApp.Client.Services.Auth
+@using TreviaApp.Contracts.Authentication
+@using TreviaApp.Contracts.Gamification.Responses
+@using TreviaApp.Contracts.WorkoutExecution.Responses
+@using TreviaApp.Contracts.Reports.Responses
+@using TreviaApp.Contracts.Notifications.Responses
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Dashboard - TreviaApp</PageTitle>
+
+<div class="container-fluid py-4 px-4">
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="text-muted fs-5">Carregando dashboard...</p>
+            </div>
+        </div>
+    }
+    else if (!isAuthenticated)
+    {
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6 text-center">
+                <div class="card shadow p-5">
+                    <h3 class="text-warning mb-3">Acesso não autorizado</h3>
+                    <p class="text-muted mb-4">Você precisa estar autenticado para acessar o dashboard.</p>
+                    <button class="btn btn-primary btn-lg" @onclick="NavigateToLogin">Ir para Login</button>
+                </div>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-8">
+                <div class="alert alert-danger p-4" role="alert">
+                    <h4 class="alert-heading mb-2">Ops! Algo deu errado</h4>
+                    <p class="mb-2">@errorMessage</p>
+                    <button class="btn btn-outline-danger mt-2" @onclick="LoadDashboardData">Tentar novamente</button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 mb-0 fw-bold">Dashboard</h1>
+            <small class="text-muted">Última atualização: @DataAtualizacao</small>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div class="card text-white bg-primary shadow-sm h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-white-50 small mb-1 text-uppercase fw-semibold">Pontos Totais</p>
+                                <h2 class="fw-bold mb-0 display-5">@TotalPointsFormatado</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 small text-white-50">
+                            +@TotalPointsRaw pts no total
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div class="card text-white bg-success shadow-sm h-100 border-0">
+                    <div class="card-body">
+                        <p class="text-white-50 small mb-1 text-uppercase fw-semibold">Nível Atual</p>
+                        <h2 class="fw-bold mb-2 display-5">Nível @CurrentLevel</h2>
+                        <p class="small mb-2">
+                            @CurrentXpFormatado XP / @XpToNextFormatado XP
+                        </p>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-white progress-bar-striped"
+                                 role="progressbar"
+                                 style="@XpProgressStyle"
+                                 aria-valuenow="@XpProgressPercent"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-white-50 mt-2 d-block">@XpProgressFormatado para o próximo nível</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div class="card text-white bg-warning shadow-sm h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-dark small mb-1 text-uppercase fw-semibold opacity-75">Streak Atual</p>
+                                <h2 class="fw-bold mb-0 display-5 text-dark">@DailyStreak <span class="fs-4 fw-normal">dias</span></h2>
+                            </div>
+                            <div class="bg-dark bg-opacity-25 rounded p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="text-dark" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M5.05.07a.5.5 0 0 1 .46.14L7 2v2a1 1 0 0 1-1 1H4v2a1 1 0 0 1-1 1H1v2a1 1 0 0 1-1 1v1a1 1 0 0 1 1 1h1a1 1 0 0 1 1-1V9h1a2 2 0 0 0 2-2V5h1a2 2 0 0 0 2-2V2h1V.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5V2h1v2a1 1 0 0 1-1 1h-2v1a3 3 0 0 1-3 3H8v1a3 3 0 0 1-3 3H3v1a1 1 0 0 1-1 1H0V9a1 1 0 0 1 1-1h2V6a2 2 0 0 1 2-2h2V2.5a.5.5 0 0 1 .05-.22l1.5-2A.5.5 0 0 1 5.5 0a.5.5 0 0 1-.45.07z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 small text-dark opacity-75">
+                            Recorde: @DailyLongest dias
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div class="card text-white bg-info shadow-sm h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-white-50 small mb-1 text-uppercase fw-semibold">Missões Hoje</p>
+                                <h2 class="fw-bold mb-0 display-5">@MissionsCompletadas/@MissionsTotal</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm3.406 3H11.5a.5.5 0 0 1 0 1H6.765l1.707 1.707a.5.5 0 1 1-.708.707l-2.5-2.5a.5.5 0 0 1 0-.707l2.5-2.5a.5.5 0 0 1 .708.707L6.765 4H5.406z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 small text-white-50">
+                            @MissionsStatus
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div class="card text-white bg-danger shadow-sm h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-white-50 small mb-1 text-uppercase fw-semibold">Notificações</p>
+                                <h2 class="fw-bold mb-0 display-5">@UnreadNotifications</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 small text-white-50">
+                            Não lidas
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (activeWorkout != null)
+        {
+            <div class="card shadow-sm border-2 border-primary mb-4">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <span class="badge bg-primary text-white mb-2 px-3 py-1 rounded-pill">
+                                <span class="spinner-grow spinner-grow-sm me-1" aria-hidden="true"></span>
+                                Treino em andamento
+                            </span>
+                            <h3 class="fw-bold mb-1">@activeWorkout.Name</h3>
+                            @if (!string.IsNullOrEmpty(activeWorkout.TrainingPlanName))
+                            {
+                                <p class="text-muted mb-0">
+                                    @activeWorkout.TrainingPlanName - Semana @activeWorkout.WeekNumberInPlan
+                                </p>
+                            }
+                            <p class="text-muted small mt-2 mb-0">
+                                @ActiveWorkoutInfo
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <button class="btn btn-primary btn-lg px-4" @onclick="ContinueWorkout">
+                                Continuar Treino
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill ms-2" viewBox="0 0 16 16">
+                                    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="mb-0 fw-semibold">Missões de Hoje</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (todayMissions.Count == 0)
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <p class="mb-0">Nenhuma missão disponível hoje. Volte mais tarde!</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var mission in todayMissions)
+                                {
+                                    var badgeClass = mission.IsCompleted ? "bg-success" : "bg-secondary";
+                                    var progressBarClass = mission.IsCompleted ? "bg-success" : "bg-primary";
+                                    var missionProgress = ((int)mission.ProgressPercentage).ToString() + "%";
+                                    <li class="list-group-item p-4 border-0 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="@("rounded-pill d-flex align-items-center justify-content-center fw-bold text-white " + badgeClass)" style="width: 44px; height: 44px;">
+                                                    @if (mission.IsCompleted)
+                                                    {
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                                                        </svg>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="fs-6">!</span>
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1 fw-semibold">@mission.Title</h6>
+                                                    <small class="text-muted">@mission.Description</small>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-success fw-semibold d-block">+@mission.PointsReward pts</small>
+                                                <small class="text-primary fw-semibold d-block">+@mission.XpReward XP</small>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="@("progress-bar " + progressBarClass)"
+                                                 role="progressbar"
+                                                 style="width: @missionProgress"
+                                                 aria-valuenow="@((int)mission.ProgressPercentage)"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-2">
+                                            <small class="text-muted">@mission.CurrentValue/@mission.TargetValue</small>
+                                            @if (mission.IsCompleted && !mission.IsClaimed)
+                                            {
+                                                <button class="btn btn-sm btn-outline-success py-0 px-3" disabled>
+                                                    Reivindicar
+                                                </button>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="mb-0 fw-semibold">Resumo - Últimos 30 Dias</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        @if (summary30 != null)
+                        {
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted">Treinos Concluídos</span>
+                                    <span class="fw-bold fs-5">@summary30.CompletedWorkouts/@summary30.TotalWorkouts</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted">Volume Total</span>
+                                    <span class="fw-bold fs-5">@VolumeTotal</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted">Taxa de Conclusão</span>
+                                    <span class="@("fw-bold fs-5 " + CompletionRateClass)">@TaxaConclusao</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted">Exercícios Únicos</span>
+                                    <span class="fw-bold fs-5">@summary30.UniqueExercisesPerformed</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 border-0">
+                                    <span class="text-muted">Recorde Streak</span>
+                                    <span class="fw-bold fs-5 text-warning">@summary30.LongestStreakDays dias</span>
+                                </li>
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-4 mb-0">Dados não disponíveis.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private bool isAuthenticated;
+    private string? errorMessage;
+
+    private GamificationDashboardResponse? dashboard;
+    private WorkoutSessionDetailResponse? activeWorkout;
+    private WorkoutSummaryResponse? summary30;
+    private UnreadCountResponse? unreadCount;
+    private List<UserMissionProgressResponse> todayMissions = new();
+
+    private string DataAtualizacao => DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+
+    private string TotalPointsFormatado => (dashboard?.TotalPoints ?? 0).ToString("N0");
+    private int TotalPointsRaw => dashboard?.TotalPoints ?? 0;
+    private int CurrentLevel => dashboard?.CurrentLevel ?? 1;
+    private string CurrentXpFormatado => (dashboard?.CurrentXp ?? 0).ToString("N0");
+    private string XpToNextFormatado => (dashboard?.XpToNextLevel ?? 1).ToString("N0");
+    private double XpProgressPercent => dashboard?.XpProgressPercentage ?? 0;
+    private string XpProgressStyle => $"width: {XpProgressPercent:F1}%;";
+    private string XpProgressFormatado => $"{XpProgressPercent:F1}%";
+
+    private int DailyStreak => dashboard?.Streaks?.DailyCurrent ?? 0;
+    private int DailyLongest => dashboard?.Streaks?.DailyLongest ?? 0;
+
+    private int MissionsCompletadas => todayMissions.Count(m => m.IsCompleted);
+    private int MissionsTotal => todayMissions.Count;
+    private string MissionsStatus =>
+        MissionsCompletadas == MissionsTotal && MissionsTotal > 0
+            ? "Todas completas!"
+            : $"{todayMissions.Count(m => m.IsClaimed)} reivindicadas";
+
+    private int UnreadNotifications => unreadCount?.UnreadCount ?? 0;
+
+    private string ActiveWorkoutInfo
+    {
+        get
+        {
+            if (activeWorkout == null) return "";
+            var exercisesCount = activeWorkout.Exercises?.Count() ?? 0;
+            var completedSets = activeWorkout.Exercises?.SelectMany(e => e.Sets)?.Count(s => s.Completed) ?? 0;
+            return $"{exercisesCount} exercícios - {completedSets} séries concluídas";
+        }
+    }
+
+    private string VolumeTotal
+    {
+        get
+        {
+            if (summary30 == null) return "0 kg";
+            return (summary30.TotalVolumeKg ?? 0).ToString("N0") + " kg";
+        }
+    }
+
+    private string CompletionRateClass
+    {
+        get
+        {
+            if (summary30 == null) return "";
+            return summary30.CompletionRatePercent >= 70 ? "text-success" : "text-warning";
+        }
+    }
+
+    private string TaxaConclusao
+    {
+        get
+        {
+            if (summary30 == null) return "0%";
+            return summary30.CompletionRatePercent.ToString("F0") + "%";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAuthenticated = await Auth.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            isLoading = false;
+            return;
+        }
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var now = DateTimeOffset.Now;
+            var from = now.AddDays(-30);
+
+            var dashboardTask = Gamification.GetMyDashboard();
+            var activeWorkoutTask = Workouts.GetCurrentActive();
+            var summaryTask = Reports.GetMySummary(from, now);
+            var unreadCountTask = Notifications.GetUnreadCount();
+
+            await Task.WhenAll(dashboardTask, activeWorkoutTask, summaryTask, unreadCountTask);
+
+            dashboard = await dashboardTask;
+            activeWorkout = await activeWorkoutTask;
+            summary30 = await summaryTask;
+            unreadCount = await unreadCountTask;
+            todayMissions = dashboard?.TodayMissions ?? new List<UserMissionProgressResponse>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+
+    private void ContinueWorkout()
+    {
+        if (activeWorkout != null)
+        {
+            Nav.NavigateTo("/workouts/" + activeWorkout.Id);
+        }
+    }
+}

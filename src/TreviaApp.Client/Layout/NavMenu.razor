@@ -1,31 +1,101 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TreviaApp.Client</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+@using Microsoft.AspNetCore.Components.Authorization
+<AuthorizeView>
+    <Authorized>
+    <div class="top-row ps-3 navbar navbar-dark">
+        <div class="container-fluid">
+            <NavLink class="navbar-brand text-decoration-none" href="dashboard">🏋️ TreviaApp</NavLink>
+            <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </div>
-</div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
+    <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+        <nav class="nav flex-column">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
+                    <span aria-hidden="true">📊</span> Dashboard
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="workouts">
+                    <span aria-hidden="true">💪</span> Meus Treinos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="trainingplans">
+                    <span aria-hidden="true">📋</span> Planos de Treino
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="exercises">
+                    <span aria-hidden="true">🦵</span> Exercícios
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="gamification">
+                    <span aria-hidden="true">🏆</span> Gamificação
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="reports">
+                    <span aria-hidden="true">📈</span> Relatórios
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="coaching">
+                    <span aria-hidden="true">🧑‍🏫</span> Coaching
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="notifications">
+                    <span aria-hidden="true">🔔</span> Notificações
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="profile">
+                    <span aria-hidden="true">👤</span> Meu Perfil
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="consents">
+                    <span aria-hidden="true">📜</span> Consentimentos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3 mt-3 border-top pt-3">
+                <NavLink class="nav-link text-secondary" href="counter">
+                    <span aria-hidden="true">➕</span> Counter (demo)
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link text-secondary" href="weather">
+                    <span aria-hidden="true">🌤️</span> Weather (demo)
+                </NavLink>
+            </div>
+        </nav>
+    </div>
+    </Authorized>
+    <NotAuthorized>
+    <div class="top-row ps-3 navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="">🏋️ TreviaApp</a>
+            <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    </div>
+    <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+        <nav class="nav flex-column">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">🔐 Entrar</NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="register">✨ Criar Conta</NavLink>
+            </div>
+        </nav>
+    </div>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private bool collapseNavMenu = true;

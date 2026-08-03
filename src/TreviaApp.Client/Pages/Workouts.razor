@@ -1,0 +1,511 @@
+@page "/workouts"
+@using TreviaApp.Client.Services
+@using TreviaApp.Contracts.WorkoutExecution.Requests
+@using TreviaApp.Contracts.WorkoutExecution.Responses
+@using TreviaApp.Contracts.TrainingPlans.Responses
+@using TreviaApp.Shared.Enums
+
+@inject IWorkoutsService WorkoutService
+@inject ITrainingPlansService PlanService
+@inject NavigationManager Nav
+
+<PageTitle>Treinos</PageTitle>
+
+<div class="container py-4">
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            @_errorMessage
+            <button type="button" class="btn-close" @onclick="() => _errorMessage = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            @_successMessage
+            <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+        </div>
+    }
+
+    <h1 class="mb-4">Meus Treinos</h1>
+
+    @if (_loadingInitial)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3 text-muted">Carregando treinos...</p>
+        </div>
+    }
+    else
+    {
+        @if (_activeWorkout != null)
+        {
+            <div class="card border-primary mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-play-circle-fill me-2"></i>
+                        Treino em Andamento
+                    </h5>
+                    <span class="badge @(_activeWorkout.Status == WorkoutStatus.Paused ? "bg-warning" : "bg-light text-primary")">
+                        @(_activeWorkout.Status == WorkoutStatus.Paused ? "Pausado" : "Em Progresso")
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-12 col-md-6">
+                            <h6 class="fw-bold mb-1">@_activeWorkout.Name</h6>
+                            @if (!string.IsNullOrEmpty(_activeWorkout.TrainingPlanName))
+                            {
+                                <p class="text-muted small mb-2">Plano: @_activeWorkout.TrainingPlanName</p>
+                            }
+                            <div class="d-flex gap-3 small text-muted">
+                                <span>
+                                    <i class="bi bi-clock me-1"></i>
+                                    @FormatDuration(_activeWorkout.TotalDurationElapsedSeconds)
+                                </span>
+                                <span>
+                                    <i class="bi bi-list-check me-1"></i>
+                                    @_activeWorkout.Exercises.Count() exercícios
+                                </span>
+                                @if (_activeWorkout.CaloriesBurned.HasValue)
+                                {
+                                    <span>
+                                        <i class="bi bi-fire me-1"></i>
+                                        @_activeWorkout.CaloriesBurned kcal
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                                @if (_activeWorkout.Status == WorkoutStatus.InProgress)
+                                {
+                                    <button class="btn btn-warning" @onclick="PauseWorkout" disabled="@_actionLoading">
+                                        @if (_actionLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        <i class="bi bi-pause-fill me-1"></i>Pausar
+                                    </button>
+                                }
+                                @if (_activeWorkout.Status == WorkoutStatus.Paused)
+                                {
+                                    <button class="btn btn-success" @onclick="ResumeWorkout" disabled="@_actionLoading">
+                                        @if (_actionLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        <i class="bi bi-play-fill me-1"></i>Continuar
+                                    </button>
+                                }
+                                <button class="btn btn-primary" @onclick="ContinueWorkout" disabled="@_actionLoading">
+                                    <i class="bi bi-arrow-right me-1"></i>Continuar Treino
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "history" ? "active" : "")"
+                        @onclick='() => _activeTab = "history"'
+                        type="button" role="tab">
+                    <i class="bi bi-clock-history me-1"></i>Histórico
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "new" ? "active" : "")"
+                        @onclick="@LoadPlans"
+                        type="button" role="tab">
+                    <i class="bi bi-plus-circle me-1"></i>Iniciar Novo
+                </button>
+            </li>
+        </ul>
+
+        @if (_activeTab == "history")
+        {
+            if (_loadingHistory)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                </div>
+            }
+            else if (_workoutHistory == null || !_workoutHistory.Any())
+            {
+                <div class="card border-0 bg-light">
+                    <div class="card-body text-center py-5">
+                        <div class="display-4 mb-3 text-muted">
+                            <i class="bi bi-calendar-x"></i>
+                        </div>
+                        <h5 class="text-muted">Nenhum treino encontrado</h5>
+                        <p class="text-muted small mb-4">Você ainda não realizou nenhum treino.</p>
+                        <button class="btn btn-primary" @onclick='() => { _activeTab = "new"; _ = LoadPlans(); }'>
+                            <i class="bi bi-play me-1"></i>Iniciar Primeiro Treino
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Plano</th>
+                                    <th>Status</th>
+                                    <th>Duração</th>
+                                    <th>Calorias</th>
+                                    <th class="text-end">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var workout in _workoutHistory)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@workout.StartedAt?.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                                            <small class="text-muted">@workout.StartedAt?.ToLocalTime().ToString("HH:mm")</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">@workout.Name</div>
+                                            @if (!string.IsNullOrEmpty(workout.TrainingPlanName))
+                                            {
+                                                <small class="text-muted">@workout.TrainingPlanName</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @switch (workout.Status)
+                                            {
+                                                case WorkoutStatus.Completed:
+                                                    <span class="badge bg-success">Concluído</span>
+                                                    break;
+                                                case WorkoutStatus.InProgress:
+                                                    <span class="badge bg-primary">Em Progresso</span>
+                                                    break;
+                                                case WorkoutStatus.Paused:
+                                                    <span class="badge bg-warning text-dark">Pausado</span>
+                                                    break;
+                                                case WorkoutStatus.Interrupted:
+                                                    <span class="badge bg-danger">Interrompido</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@workout.Status</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>@FormatDuration(workout.TotalDurationElapsedSeconds)</td>
+                                        <td>
+                                            @if (workout.TotalVolumeKg.HasValue)
+                                            {
+                                                <span class="fw-semibold">@workout.TotalVolumeKg.Value.ToString("N0") kg</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="@(() => OpenWorkout(workout.Id))">
+                                                <i class="bi bi-eye me-1"></i>Abrir
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (_totalHistoryCount > _workoutHistory.Count)
+                    {
+                        <div class="card-footer text-center py-3">
+                            <button class="btn btn-outline-secondary" @onclick="LoadMoreHistory" disabled="@_loadingHistory">
+                                @if (_loadingHistory) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Carregar mais
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        @if (_activeTab == "new")
+        {
+            if (_loadingPlans)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                </div>
+            }
+            else if (_availablePlans == null || !_availablePlans.Any())
+            {
+                <div class="card border-0 bg-light">
+                    <div class="card-body text-center py-5">
+                        <div class="display-4 mb-3 text-muted">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <h5 class="text-muted">Nenhum plano disponível</h5>
+                        <p class="text-muted small mb-4">Você ainda não tem planos de treino atribuídos.</p>
+                        <button class="btn btn-outline-primary" @onclick="GoToTrainingPlans">
+                            <i class="bi bi-collection-play me-1"></i>Explorar Planos
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var plan in _availablePlans)
+                    {
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">@plan.Name</h6>
+                                        <span class="badge bg-primary-subtle text-primary small">@plan.Status</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(plan.Description))
+                                    {
+                                        <p class="small text-muted mb-3 line-clamp-2">@plan.Description</p>
+                                    }
+                                    <div class="d-flex flex-wrap gap-2 small text-muted mb-3">
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-grid-3x3-gap me-1"></i>@plan.SplitType
+                                        </span>
+                                        @if (plan.TotalWeeks.HasValue)
+                                        {
+                                            <span class="badge bg-light text-dark">
+                                                <i class="bi bi-calendar-week me-1"></i>@plan.TotalWeeks sem.
+                                            </span>
+                                        }
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-dumbbell me-1"></i>@plan.TotalSessions sess.
+                                        </span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(plan.AssignedToStudentName))
+                                    {
+                                        <p class="small text-muted mb-3">
+                                            <i class="bi bi-person me-1"></i>Atribuído a: @plan.AssignedToStudentName
+                                        </p>
+                                    }
+                                    <div class="mt-auto">
+                                        <button class="btn btn-primary w-100"
+                                                @onclick="@(() => StartSession(plan))"
+                                                disabled="@_actionLoading">
+                                            @if (_actionLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                            <i class="bi bi-play-fill me-1"></i>Iniciar Sessão
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    private string _activeTab = "history";
+    private bool _loadingInitial = true;
+    private bool _loadingHistory;
+    private bool _loadingPlans;
+    private bool _actionLoading;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private WorkoutSessionDetailResponse? _activeWorkout;
+    private List<WorkoutSessionSummaryResponse> _workoutHistory = new();
+    private int _historyPage = 1;
+    private int _totalHistoryCount;
+
+    private List<TrainingPlanSummaryResponse> _availablePlans = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialData();
+    }
+
+    private async Task LoadInitialData()
+    {
+        _loadingInitial = true;
+        try
+        {
+            var tasks = new List<Task>
+            {
+                LoadActiveWorkout(),
+                LoadHistory(1)
+            };
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar dados: {ex.Message}";
+        }
+        finally
+        {
+            _loadingInitial = false;
+        }
+    }
+
+    private async Task LoadActiveWorkout()
+    {
+        try
+        {
+            _activeWorkout = await WorkoutService.GetCurrentActive();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar treino ativo: {ex.Message}";
+        }
+    }
+
+    private async Task LoadHistory(int page)
+    {
+        _loadingHistory = true;
+        try
+        {
+            var response = await WorkoutService.GetMy(page: page, pageSize: 20);
+            if (page == 1)
+                _workoutHistory = response.Items.ToList();
+            else
+                _workoutHistory.AddRange(response.Items);
+            _totalHistoryCount = response.TotalCount;
+            _historyPage = page;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar histórico: {ex.Message}";
+        }
+        finally
+        {
+            _loadingHistory = false;
+        }
+    }
+
+    private async Task LoadMoreHistory()
+    {
+        await LoadHistory(_historyPage + 1);
+    }
+
+    private async Task LoadPlans()
+    {
+        _activeTab = "new";
+        if (_availablePlans.Any()) return;
+
+        _loadingPlans = true;
+        try
+        {
+            var response = await PlanService.GetMyPlans(page: 1, pageSize: 50);
+            _availablePlans = response.Items
+                .Where(p => p.Status is TrainingPlanStatus.Active or TrainingPlanStatus.Assigned)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar planos: {ex.Message}";
+        }
+        finally
+        {
+            _loadingPlans = false;
+        }
+    }
+
+    private async Task PauseWorkout()
+    {
+        if (_activeWorkout == null) return;
+        _actionLoading = true;
+        try
+        {
+            var result = await WorkoutService.Pause(_activeWorkout.Id);
+            _successMessage = "Treino pausado com sucesso.";
+            await LoadActiveWorkout();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao pausar treino: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task ResumeWorkout()
+    {
+        if (_activeWorkout == null) return;
+        _actionLoading = true;
+        try
+        {
+            var result = await WorkoutService.Resume(_activeWorkout.Id);
+            _successMessage = "Treino retomado com sucesso.";
+            await LoadActiveWorkout();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao retomar treino: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private void ContinueWorkout()
+    {
+        if (_activeWorkout == null) return;
+        Nav.NavigateTo($"/workouts/{_activeWorkout.Id}");
+    }
+
+    private void OpenWorkout(Guid id)
+    {
+        Nav.NavigateTo($"/workouts/{id}");
+    }
+
+    private void GoToTrainingPlans()
+    {
+        Nav.NavigateTo("/trainingplans");
+    }
+
+    private async Task StartSession(TrainingPlanSummaryResponse plan)
+    {
+        _actionLoading = true;
+        try
+        {
+            var planDetail = await PlanService.GetById(plan.Id);
+            var firstSession = planDetail.Sessions.FirstOrDefault();
+            if (firstSession == null)
+            {
+                _errorMessage = "Este plano não possui sessões configuradas.";
+                return;
+            }
+
+            var request = new StartWorkoutSessionRequest(firstSession.Id, weekNumberInPlan: 1);
+            var result = await WorkoutService.Start(firstSession.Id, request);
+            _successMessage = $"Sessão \"{result.Name}\" iniciada com sucesso!";
+            await LoadActiveWorkout();
+            await LoadHistory(1);
+            _activeTab = "history";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao iniciar sessão: {ex.Message}";
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private static string FormatDuration(long? seconds)
+    {
+        if (!seconds.HasValue) return "-";
+        var ts = TimeSpan.FromSeconds(seconds.Value);
+        return ts.TotalHours >= 1
+            ? $"{(int)ts.TotalHours}h {ts.Minutes}m"
+            : ts.Minutes > 0
+                ? $"{ts.Minutes}m {ts.Seconds}s"
+                : $"{ts.Seconds}s";
+    }
+}

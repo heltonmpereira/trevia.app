@@ -1,0 +1,521 @@
+@page "/coaching"
+@using TreviaApp.Contracts.Coaching.Requests
+@using TreviaApp.Contracts.Coaching.Responses
+@using TreviaApp.Shared.Enums
+@inject TreviaApp.Client.Services.Coaching.ICoachingService coach
+
+<PageTitle>Coaching</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Coaching</h1>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "coaches" ? "active" : "")" @onclick='() => SetTab("coaches")'>
+                Meu Coach(es)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "students" ? "active" : "")" @onclick='() => SetTab("students")'>
+                Meus Alunos
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "received" ? "active" : "")" @onclick='() => SetTab("received")'>
+                Convites Recebidos
+                @if (pendingReceivedCount > 0)
+                {
+                    <span class="badge bg-danger ms-1">@pendingReceivedCount</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "sent" ? "active" : "")" @onclick='() => SetTab("sent")'>
+                Convites Enviados
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "search" ? "active" : "")" @onclick='() => SetTab("search")'>
+                Buscar
+            </button>
+        </li>
+    </ul>
+
+    @switch (activeTab)
+    {
+        case "coaches":
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Meus Coaches</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>
+                    }
+                    else if (myCoaches == null || myCoaches.Items.Count == 0)
+                    {
+                        <p class="text-muted text-center py-5">Você ainda não tem coaches vinculados.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Objetivo</th>
+                                    <th>Desde</th>
+                                    <th>Planos Ativos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in myCoaches.Items)
+                                {
+                                    <tr>
+                                        <td>@c.DisplayName</td>
+                                        <td>@c.Goal</td>
+                                        <td>@c.LinkedSince.ToString("dd/MM/yyyy")</td>
+                                        <td><span class="badge bg-primary">@c.ActiveTrainingPlansCount</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+            break;
+
+        case "students":
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Meus Alunos</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>
+                    }
+                    else if (myStudents == null || myStudents.Items.Count == 0)
+                    {
+                        <p class="text-muted text-center py-5">Você ainda não tem alunos vinculados.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Objetivo</th>
+                                    <th>Experiência</th>
+                                    <th>Desde</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in myStudents.Items)
+                                {
+                                    <tr>
+                                        <td>@s.DisplayName</td>
+                                        <td>@s.Goal</td>
+                                        <td>@s.Experience</td>
+                                        <td>@s.LinkedSince.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-danger btn-sm" @onclick="async () => await EndStudentRelationship(s.UserId)">
+                                                Encerrar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+            break;
+
+        case "received":
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Convites Recebidos</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>
+                    }
+                    else if (incomingInvites == null || incomingInvites.Items.Count == 0)
+                    {
+                        <p class="text-muted text-center py-5">Nenhum convite recebido.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var inv in incomingInvites.Items)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                @if (inv.Direction == CoachInviteDirection.CoachToStudent)
+                                                {
+                                                    <span class="badge bg-info me-2">Coach → Aluno</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary me-2">Aluno → Coach</span>
+                                                }
+                                                @(inv.Direction == CoachInviteDirection.CoachToStudent ? inv.CoachName : inv.StudentName)
+                                            </h6>
+                                            <p class="small text-muted mb-1">@inv.Message</p>
+                                            <div class="small">
+                                                <span class="badge @StatusClass(inv.Status)">@inv.Status</span>
+                                                <span class="text-muted ms-2">Criado em @inv.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                                <span class="text-muted ms-2">Expira em @inv.ExpiresAt.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        </div>
+                                        @if (inv.Status == CoachRequestStatus.Pending && !inv.IsExpired)
+                                        {
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-success btn-sm" @onclick="async () => await AcceptInvite(inv.Id)">Aceitar</button>
+                                                <button class="btn btn-outline-danger btn-sm" @onclick="async () => await RejectInvite(inv.Id)">Rejeitar</button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        case "sent":
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Convites Enviados</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>
+                    }
+                    else if (outgoingInvites == null || outgoingInvites.Items.Count == 0)
+                    {
+                        <p class="text-muted text-center py-5">Nenhum convite enviado.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var inv in outgoingInvites.Items)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                @(inv.Direction == CoachInviteDirection.CoachToStudent ? inv.StudentName : inv.CoachName)
+                                            </h6>
+                                            <p class="small text-muted mb-1">@inv.Message</p>
+                                            <div class="small">
+                                                <span class="badge @StatusClass(inv.Status)">@inv.Status</span>
+                                                <span class="text-muted ms-2">Criado em @inv.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        </div>
+                                        @if (inv.Status == CoachRequestStatus.Pending)
+                                        {
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="async () => await CancelInvite(inv.Id)">
+                                                Cancelar
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        case "search":
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo de Busca</label>
+                            <select class="form-select" @bind="searchType">
+                                <option value="coach">Buscar Coaches</option>
+                                <option value="student">Buscar Alunos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" @bind="searchName" placeholder="Digite o nome..." />
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" @onclick="SearchUsers">Buscar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resultados da Busca</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (searchLoading)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Buscando...</span></div></div>
+                    }
+                    else if (searchResults == null || searchResults.Items.Count == 0)
+                    {
+                        <p class="text-muted text-center py-5">Nenhum resultado encontrado.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Objetivo</th>
+                                    <th>Experiência</th>
+                                    <th class="text-end">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var u in searchResults.Items)
+                                {
+                                    <tr>
+                                        <td>@u.DisplayName</td>
+                                        <td>@u.Goal</td>
+                                        <td>@u.Experience</td>
+                                        <td class="text-end">
+                                            @if (searchType == "coach")
+                                            {
+                                                <button class="btn btn-primary btn-sm" @onclick="async () => await SendStudentRequest(u.UserId)">
+                                                    Solicitar Coach
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-primary btn-sm" @onclick="async () => await SendCoachInvite(u.UserId)">
+                                                    Convidar Aluno
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+            break;
+    }
+</div>
+
+@code {
+    private string activeTab = "coaches";
+    private bool isLoading;
+    private bool searchLoading;
+    private string? errorMessage;
+    private string? successMessage;
+    private int pendingReceivedCount;
+
+    private CoachStudentsPagedResponse? myCoaches;
+    private CoachStudentsPagedResponse? myStudents;
+    private CoachingInvitesPagedResponse? incomingInvites;
+    private CoachingInvitesPagedResponse? outgoingInvites;
+    private CoachStudentsPagedResponse? searchResults;
+
+    private string searchType = "coach";
+    private string? searchName;
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        errorMessage = null;
+        successMessage = null;
+        _ = LoadTabData();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            pendingReceivedCount = await coach.GetPendingInvitesCount();
+            await LoadTabData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task LoadTabData()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            switch (activeTab)
+            {
+                case "coaches":
+                    myCoaches = await coach.GetMyCoaches();
+                    break;
+                case "students":
+                    myStudents = await coach.GetMyStudents();
+                    break;
+                case "received":
+                    incomingInvites = await coach.GetIncomingInvites();
+                    pendingReceivedCount = await coach.GetPendingInvitesCount();
+                    break;
+                case "sent":
+                    outgoingInvites = await coach.GetOutgoingInvites();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao carregar: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SearchUsers()
+    {
+        searchLoading = true;
+        try
+        {
+            searchResults = searchType == "coach"
+                ? await coach.SearchCoachesNotLinked(searchName)
+                : await coach.SearchStudentsNotLinked(searchName);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro na busca: {ex.Message}";
+        }
+        finally
+        {
+            searchLoading = false;
+        }
+    }
+
+    private async Task AcceptInvite(Guid inviteId)
+    {
+        try
+        {
+            await coach.AcceptInvite(inviteId, new AcceptCoachInviteRequest());
+            successMessage = "Convite aceito com sucesso!";
+            await LoadTabData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task RejectInvite(Guid inviteId)
+    {
+        try
+        {
+            await coach.RejectInvite(inviteId, new RejectCoachInviteRequest());
+            successMessage = "Convite rejeitado.";
+            await LoadTabData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task CancelInvite(Guid inviteId)
+    {
+        try
+        {
+            await coach.CancelInvite(inviteId);
+            successMessage = "Convite cancelado.";
+            await LoadTabData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task EndStudentRelationship(Guid studentId)
+    {
+        try
+        {
+            var link = myStudents?.Items.FirstOrDefault(s => s.UserId == studentId);
+            if (link != null)
+            {
+                var confirm = true;
+                if (confirm)
+                {
+                    var rel = await coach.GetRelationshipById(link.UserId);
+                    if (rel != null)
+                    {
+                        await coach.EndRelationship(rel.Id, CoachRelationshipEndReason.EndedByCoach);
+                        successMessage = "Relacionamento encerrado.";
+                        await LoadTabData();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task SendCoachInvite(Guid studentId)
+    {
+        try
+        {
+            await coach.SendCoachInvite(new SendCoachInviteRequest(studentId));
+            successMessage = "Convite enviado ao aluno!";
+            await SearchUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private async Task SendStudentRequest(Guid coachId)
+    {
+        try
+        {
+            await coach.SendStudentRequest(new SendStudentRequestRequest(coachId));
+            successMessage = "Solicitação enviada ao coach!";
+            await SearchUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private static string StatusClass(CoachRequestStatus status) => status switch
+    {
+        CoachRequestStatus.Pending => "bg-warning text-dark",
+        CoachRequestStatus.Accepted => "bg-success",
+        CoachRequestStatus.Rejected => "bg-danger",
+        CoachRequestStatus.Cancelled => "bg-secondary",
+        _ => "bg-secondary"
+    };
+}

@@ -1,0 +1,567 @@
+@page "/exercises"
+@using TreviaApp.Client.Services
+@using TreviaApp.Contracts.Exercises.Requests
+@using TreviaApp.Contracts.Exercises.Responses
+@using TreviaApp.Shared.Enums
+
+@inject IExerciseService ExerciseService
+
+<PageTitle>Exercícios</PageTitle>
+
+<div class="container py-4">
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            @_errorMessage
+            <button type="button" class="btn-close" @onclick="() => _errorMessage = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            @_successMessage
+            <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+        </div>
+    }
+
+    <h1 class="mb-4">Biblioteca de Exercícios</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="fw-semibold mb-3">
+                <i class="bi bi-search me-1"></i>Buscar Exercícios
+            </h6>
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted">Nome</label>
+                    <input type="text" class="form-control"
+                           @bind="_searchName" @bind:event="oninput"
+                           placeholder="Ex: Supino, Agachamento..." />
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted">Dificuldade</label>
+                    <select class="form-select" @bind="_searchDifficulty">
+                        <option value="">Todas</option>
+                        @foreach (var d in Enum.GetValues<DifficultyLevel>())
+                        {
+                            <option value="@d">@GetDifficultyLabel(d)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted">Modalidade</label>
+                    <select class="form-select" @bind="_searchModality">
+                        <option value="">Todas</option>
+                        @foreach (var m in Enum.GetValues<ExerciseModality>())
+                        {
+                            <option value="@m">@GetModalityLabel(m)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted">Ambiente</label>
+                    <select class="form-select" @bind="_searchEnvironment">
+                        <option value="">Todos</option>
+                        @foreach (var e in Enum.GetValues<TrainingEnvironment>())
+                        {
+                            <option value="@e">@GetEnvironmentLabel(e)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" @onclick="ApplySearch" disabled="@_loading">
+                        @if (_loading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3 text-muted">Buscando exercícios...</p>
+        </div>
+    }
+    else if (_exercises == null || !_exercises.Any())
+    {
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-5">
+                <div class="display-4 mb-3 text-muted">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h5 class="text-muted">Nenhum exercício encontrado</h5>
+                <p class="text-muted small mb-4">Tente ajustar os filtros de busca.</p>
+                <button class="btn btn-outline-primary" @onclick="@(async () => { ResetFilters(); await ApplySearch(); })">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Limpar Filtros
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            @foreach (var exercise in _exercises)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(exercise.PrimaryMediaUrl))
+                        {
+                            <div class="bg-light text-center p-3">
+                                <img src="@exercise.PrimaryMediaUrl"
+                                     alt="@exercise.Name"
+                                     class="img-fluid rounded"
+                                     style="max-height: 140px; object-fit: cover;"
+                                     onerror="this.style.display='none'" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="bg-light text-center p-4" style="min-height: 140px;">
+                                <div class="display-3 text-primary opacity-25">
+                                    <i class="bi bi-dumbbell"></i>
+                                </div>
+                            </div>
+                        }
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="fw-bold mb-2">@exercise.Name</h6>
+                            @if (!string.IsNullOrEmpty(exercise.ShortDescription))
+                            {
+                                <p class="small text-muted mb-3 line-clamp-2">@exercise.ShortDescription</p>
+                            }
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge @GetDifficultyBadgeClass(exercise.DifficultyLevel)">
+                                    <i class="bi bi-bar-chart me-1"></i>@GetDifficultyLabel(exercise.DifficultyLevel)
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-activity me-1"></i>@GetModalityLabel(exercise.Modality)
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-geo-alt me-1"></i>@GetEnvironmentLabel(exercise.Environment)
+                                </span>
+                            </div>
+                            @if (exercise.PrimaryMusclesCount > 0)
+                            {
+                                <div class="small text-muted mb-3">
+                                    <i class="bi bi-person-bounding-box me-1"></i>
+                                    @exercise.PrimaryMusclesCount músculo(s) principal(is)
+                                </div>
+                            }
+                            <div class="mt-auto">
+                                <button class="btn btn-outline-primary w-100" @onclick="@(() => LoadDetail(exercise.Id))" disabled="@_loadingDetail">
+                                    @if (_loadingDetail) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    <i class="bi bi-info-circle me-1"></i>Ver detalhes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_totalCount > _exercises.Count)
+        {
+            <div class="text-center py-3">
+                <button class="btn btn-outline-secondary" @onclick="LoadMore" disabled="@_loadingMore">
+                    @if (_loadingMore) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Carregar mais (@(_exercises.Count) / @_totalCount)
+                </button>
+            </div>
+        }
+    }
+
+    @if (_detailExercise != null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-info-circle me-2"></i>
+                            @_detailExercise.Name
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" @onclick="CloseDetail"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-5">
+                                @if (_detailExercise.Medias.Any() && !string.IsNullOrEmpty(_detailExercise.Medias.FirstOrDefault(m => m.IsPrimary)?.AccessUrl ?? _detailExercise.Medias.FirstOrDefault()?.AccessUrl))
+                                {
+                                    var primaryUrl = _detailExercise.Medias.FirstOrDefault(m => m.IsPrimary)?.AccessUrl ?? _detailExercise.Medias.FirstOrDefault()?.AccessUrl;
+                                    <img src="@primaryUrl" alt="@_detailExercise.Name" class="img-fluid rounded shadow-sm w-100" />
+                                }
+                                else
+                                {
+                                    <div class="bg-light rounded p-5 text-center">
+                                        <div class="display-1 text-primary opacity-25">
+                                            <i class="bi bi-dumbbell"></i>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-12 col-md-7">
+                                @if (!string.IsNullOrEmpty(_detailExercise.ShortDescription))
+                                {
+                                    <p class="text-muted mb-3">@_detailExercise.ShortDescription</p>
+                                }
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="badge @GetDifficultyBadgeClass(_detailExercise.DifficultyLevel)">
+                                        <i class="bi bi-bar-chart me-1"></i>@GetDifficultyLabel(_detailExercise.DifficultyLevel)
+                                    </span>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-activity me-1"></i>@GetModalityLabel(_detailExercise.Modality)
+                                    </span>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-geo-alt me-1"></i>@GetEnvironmentLabel(_detailExercise.Environment)
+                                    </span>
+                                </div>
+
+                                @if (_detailExercise.Muscles.Any(m => m.MuscleRole == MuscleRole.Primary))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <i class="bi bi-person-bounding-box me-1"></i>Músculos Principais
+                                        </label>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var m in _detailExercise.Muscles.Where(m => m.MuscleRole == MuscleRole.Primary))
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary">@GetMuscleLabel(m.Muscle)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (_detailExercise.Muscles.Any(m => m.MuscleRole != MuscleRole.Primary))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <i class="bi bi-diagram-3 me-1"></i>Músculos Sinergistas/Estabilizadores
+                                        </label>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var m in _detailExercise.Muscles.Where(m => m.MuscleRole != MuscleRole.Primary))
+                                            {
+                                                <span class="badge bg-light text-dark border small">@GetMuscleLabel(m.Muscle)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (_detailExercise.Equipments.Any())
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-muted mb-1">
+                                            <i class="bi bi-tools me-1"></i>Equipamentos
+                                        </label>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var eq in _detailExercise.Equipments)
+                                            {
+                                                <span class="badge @(eq.Required ? "bg-dark" : "bg-light text-dark border") small">
+                                                    @GetEquipmentLabel(eq.Equipment)
+                                                    @if (eq.Required) { <span class="ms-1 text-white-50">(obrigatório)</span> }
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(_detailExercise.Instructions))
+                        {
+                            <div class="mb-4">
+                                <h6 class="fw-semibold mb-2">
+                                    <i class="bi bi-list-ol me-1 text-primary"></i>Instruções
+                                </h6>
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <p class="mb-0" style="white-space: pre-line;">@_detailExercise.Instructions</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(_detailExercise.Tips))
+                        {
+                            <div class="mb-3">
+                                <h6 class="fw-semibold mb-2">
+                                    <i class="bi bi-lightbulb me-1 text-warning"></i>Dicas
+                                </h6>
+                                <div class="card border-0 bg-warning-subtle">
+                                    <div class="card-body">
+                                        <p class="mb-0 text-dark small" style="white-space: pre-line;">@_detailExercise.Tips</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (_detailExercise.Medias.Count > 1)
+                        {
+                            <div>
+                                <h6 class="fw-semibold mb-2">
+                                    <i class="bi bi-collection-play me-1 text-info"></i>Mídia
+                                </h6>
+                                <div class="row g-2">
+                                    @foreach (var media in _detailExercise.Medias)
+                                    {
+                                        if (media.MediaType == MediaType.Image && !string.IsNullOrEmpty(media.AccessUrl))
+                                        {
+                                            <div class="col-4">
+                                                <img src="@media.AccessUrl"
+                                                     alt="@media.Caption ?? _detailExercise.Name"
+                                                     class="img-fluid rounded"
+                                                     onerror="this.parentElement.style.display='none'" />
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDetail">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _loading;
+    private bool _loadingMore;
+    private bool _loadingDetail;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private string? _searchName;
+    private DifficultyLevel? _searchDifficulty;
+    private ExerciseModality? _searchModality;
+    private TrainingEnvironment? _searchEnvironment;
+
+    private List<ExerciseSummaryResponse> _exercises = new();
+    private int _currentPage = 1;
+    private int _totalCount;
+
+    private ExerciseDetailResponse? _detailExercise;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApplySearch();
+    }
+
+    private void ResetFilters()
+    {
+        _searchName = null;
+        _searchDifficulty = null;
+        _searchModality = null;
+        _searchEnvironment = null;
+    }
+
+    private async Task ApplySearch()
+    {
+        _loading = true;
+        try
+        {
+            var request = new SearchExercisesRequest(
+                Name: string.IsNullOrWhiteSpace(_searchName) ? null : _searchName.Trim(),
+                Environment: _searchEnvironment,
+                Modality: _searchModality,
+                DifficultyLevel: _searchDifficulty,
+                PrimaryMuscle: null,
+                Equipment: null,
+                MeasurementType: null,
+                Page: 1,
+                PageSize: 12);
+
+            var response = await ExerciseService.SearchApproved(request);
+            _exercises = response.Items.ToList();
+            _totalCount = response.TotalCount;
+            _currentPage = 1;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao buscar exercícios: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadMore()
+    {
+        _loadingMore = true;
+        try
+        {
+            var request = new SearchExercisesRequest(
+                Name: string.IsNullOrWhiteSpace(_searchName) ? null : _searchName.Trim(),
+                Environment: _searchEnvironment,
+                Modality: _searchModality,
+                DifficultyLevel: _searchDifficulty,
+                PrimaryMuscle: null,
+                Equipment: null,
+                MeasurementType: null,
+                Page: _currentPage + 1,
+                PageSize: 12);
+
+            var response = await ExerciseService.SearchApproved(request);
+            _exercises.AddRange(response.Items);
+            _totalCount = response.TotalCount;
+            _currentPage++;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar mais exercícios: {ex.Message}";
+        }
+        finally
+        {
+            _loadingMore = false;
+        }
+    }
+
+    private async Task LoadDetail(Guid id)
+    {
+        _loadingDetail = true;
+        try
+        {
+            _detailExercise = await ExerciseService.GetById(id);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Erro ao carregar detalhes: {ex.Message}";
+        }
+        finally
+        {
+            _loadingDetail = false;
+        }
+    }
+
+    private void CloseDetail()
+    {
+        _detailExercise = null;
+    }
+
+    private static string GetDifficultyLabel(DifficultyLevel d) => d switch
+    {
+        DifficultyLevel.Beginner => "Iniciante",
+        DifficultyLevel.Intermediate => "Intermediário",
+        DifficultyLevel.Advanced => "Avançado",
+        DifficultyLevel.Expert => "Especialista",
+        _ => d.ToString()
+    };
+
+    private static string GetDifficultyBadgeClass(DifficultyLevel d) => d switch
+    {
+        DifficultyLevel.Beginner => "bg-success",
+        DifficultyLevel.Intermediate => "bg-primary",
+        DifficultyLevel.Advanced => "bg-warning text-dark",
+        DifficultyLevel.Expert => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string GetModalityLabel(ExerciseModality m) => m switch
+    {
+        ExerciseModality.WeightTraining => "Musculação",
+        ExerciseModality.Cardio => "Cardio",
+        ExerciseModality.Stretching => "Alongamento",
+        ExerciseModality.Mobility => "Mobilidade",
+        ExerciseModality.WarmUp => "Aquecimento",
+        ExerciseModality.Pilates => "Pilates",
+        ExerciseModality.CrossFit => "CrossFit",
+        ExerciseModality.Functional => "Funcional",
+        ExerciseModality.Running => "Corrida",
+        ExerciseModality.Cycling => "Ciclismo",
+        ExerciseModality.Bodyweight => "Peso Corporal",
+        ExerciseModality.Powerlifting => "Powerlifting",
+        ExerciseModality.OlympicWeightlifting => "Levantamento Olímpico",
+        ExerciseModality.Strongman => "Strongman",
+        ExerciseModality.Hypertrophy => "Hipertrofia",
+        ExerciseModality.Calisthenics => "Calistenia",
+        ExerciseModality.Parkour => "Parkour",
+        ExerciseModality.Dance => "Dança",
+        ExerciseModality.Yoga => "Yoga",
+        ExerciseModality.HIIT => "HIIT",
+        ExerciseModality.Circuit => "Circuito",
+        ExerciseModality.Boxing => "Boxe",
+        ExerciseModality.MuayThai => "Muay Thai",
+        ExerciseModality.JiuJitsu => "Jiu-Jitsu",
+        ExerciseModality.Swimming => "Natação",
+        ExerciseModality.Rowing => "Remo",
+        _ => m.ToString()
+    };
+
+    private static string GetEnvironmentLabel(TrainingEnvironment e) => e switch
+    {
+        TrainingEnvironment.Gym => "Academia",
+        TrainingEnvironment.Home => "Casa",
+        TrainingEnvironment.Outdoor => "Ar Livre",
+        TrainingEnvironment.Studio => "Estúdio",
+        TrainingEnvironment.Pool => "Piscina",
+        TrainingEnvironment.Other => "Outro",
+        _ => e.ToString()
+    };
+
+    private static string GetMuscleLabel(Muscle m) => m switch
+    {
+        Muscle.Chest => "Peito",
+        Muscle.Back => "Costas",
+        Muscle.Shoulders => "Ombros",
+        Muscle.Biceps => "Bíceps",
+        Muscle.Triceps => "Tríceps",
+        Muscle.Forearms => "Antebraços",
+        Muscle.Quads => "Quadríceps",
+        Muscle.Hamstrings => "Isquiotibiais",
+        Muscle.Glutes => "Glúteos",
+        Muscle.Calves => "Panturrilhas",
+        Muscle.Abs => "Abdômen",
+        Muscle.Obliques => "Oblíquos",
+        Muscle.LowerBack => "Lombar",
+        Muscle.Trapezius => "Trapézio",
+        Muscle.Neck => "Pescoço",
+        Muscle.Adductors => "Adutores",
+        Muscle.Abductors => "Abdutores",
+        Muscle.SerratusAnterior => "Serrátil Anterior",
+        Muscle.PectoralisMajorClavicular => "Peitoral Clavicular",
+        Muscle.PectoralisMajorSternal => "Peitoral Esternal",
+        Muscle.LatissimusDorsi => "Latíssimo do Dorso",
+        Muscle.Rhomboids => "Romboides",
+        Muscle.TeresMajor => "Teres Maior",
+        Muscle.TeresMinor => "Teres Menor",
+        Muscle.Infraspinatus => "Infraespinhoso",
+        Muscle.Supraspinatus => "Supraespinhoso",
+        Muscle.DeltoidsAnterior => "Deltoide Anterior",
+        Muscle.DeltoidsLateral => "Deltoide Lateral",
+        Muscle.DeltoidsPosterior => "Deltoide Posterior",
+        Muscle.Brachialis => "Braquial",
+        Muscle.Brachioradialis => "Braquiorradial",
+        Muscle.TricepsLongHead => "Tríceps Cabeça Longa",
+        Muscle.TricepsLateralHead => "Tríceps Cabeça Lateral",
+        Muscle.TricepsMedialHead => "Tríceps Cabeça Medial",
+        Muscle.RectusFemoris => "Reto Femoral",
+        Muscle.VastusLateralis => "Vasto Lateral",
+        Muscle.VastusMedialis => "Vasto Medial",
+        Muscle.VastusIntermedius => "Vasto Intermédio",
+        Muscle.Soleus => "Sóleo",
+        Muscle.GastrocnemiusMedial => "Gastrocnêmio Medial",
+        Muscle.GastrocnemiusLateral => "Gastrocnêmio Lateral",
+        Muscle.TibialisAnterior => "Tibial Anterior",
+        Muscle.TransversusAbdominis => "Transverso do Abdômen",
+        Muscle.ErectorSpinae => "Eretor da Espinha",
+        Muscle.Multifidus => "Multífido",
+        Muscle.GluteusMinimus => "Glúteo Mínimo",
+        Muscle.GluteusMedius => "Glúteo Médio",
+        Muscle.HipFlexors => "Flexores do Quadril",
+        Muscle.Scalenes => "Escalenos",
+        Muscle.Sternocleidomastoid => "Esternocleidomastoideo",
+        _ => m.ToString()
+    };
+
+    private static string GetEquipmentLabel(Equipment e) => e.ToString();
+}

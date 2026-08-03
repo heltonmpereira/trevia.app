@@ -1,0 +1,475 @@
+@page "/reports"
+@using TreviaApp.Contracts.Reports.Responses
+@using TreviaApp.Shared.Enums
+@inject IReportsService rep
+
+<PageTitle>Relatórios</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Relatórios</h1>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" class="form-control" @bind="filterFrom" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" @bind="filterTo" />
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100" @onclick="LoadAll">Aplicar Filtros</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Resumo do Período</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 text-center">
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-primary bg-opacity-10 rounded">
+                                    <div class="display-6 fw-bold text-primary">@summary?.TotalWorkouts ?? 0</div>
+                                    <small class="text-muted">Total de Treinos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-success bg-opacity-10 rounded">
+                                    <div class="display-6 fw-bold text-success">@summary?.TotalVolumeKg?.ToString("N1") ?? "0" <small class="fs-6">kg</small></div>
+                                    <small class="text-muted">Volume Total</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-warning bg-opacity-10 rounded">
+                                    <div class="display-6 fw-bold text-warning">@summary?.TotalCalories ?? 0 <small class="fs-6">kcal</small></div>
+                                    <small class="text-muted">Calorias</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-info bg-opacity-10 rounded">
+                                    <div class="display-6 fw-bold text-info">@FormatDuration(summary?.AverageWorkoutDurationSeconds)</div>
+                                    <small class="text-muted">Duração Média</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="display-6 fw-bold">@summary?.CompletedWorkouts ?? 0</div>
+                                    <small class="text-muted">Treinos Concluídos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="display-6 fw-bold">@summary?.CompletionRatePercent.ToString("F1") ?? "0" <small class="fs-6">%</small></div>
+                                    <small class="text-muted">Taxa de Conclusão</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="display-6 fw-bold">🔥 @summary?.CurrentStreakDays ?? 0</div>
+                                    <small class="text-muted">Streak Atual</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="display-6 fw-bold">🏆 @summary?.LongestStreakDays ?? 0</div>
+                                    <small class="text-muted">Maior Streak</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Calendário de Treinos</h5>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousMonth">‹</button>
+                            <span class="align-self-center px-2">@calendarMonth.ToString("MM/yyyy")</span>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="NextMonth">›</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-1 text-center small mb-2">
+                            @foreach (var dow in new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" })
+                            {
+                                <div class="col text-muted fw-bold">@dow</div>
+                            }
+                        </div>
+                        @if (calendarDays != null)
+                        {
+                            @foreach (var week in calendarWeeks)
+                            {
+                                <div class="row g-1 mb-1">
+                                    @foreach (var day in week)
+                                    {
+                                        if (day.HasValue)
+                                        {
+                                            var d = day.Value;
+                                            var calEntry = calendarDays.FirstOrDefault(x => x.Date == d);
+                                            var hasWorkout = calEntry != null && calEntry.WorkoutsCount > 0;
+                                            <div class="col p-1">
+                                                <div class="border rounded p-1 @(hasWorkout ? "bg-success bg-opacity-10 border-success" : "")" style="min-height:50px;">
+                                                    <div class="small @(d.Month != calendarMonth.Month ? "text-muted" : "")">@d.Day</div>
+                                                    @if (hasWorkout)
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                                            <span class="badge bg-success rounded-pill" style="font-size:.6rem;">@calEntry!.WorkoutsCount</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="col p-1"></div>
+                                        }
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Progresso ao Longo do Tempo</h5>
+                        <select class="form-select form-select-sm w-auto" value="@granularity" @onchange="async (ChangeEventArgs e) => { granularity = Enum.Parse<ProgressGranularity>(e.Value!.ToString()!); await LoadProgress(); }">
+                            <option value="@ProgressGranularity.Day">Diário</option>
+                            <option value="@ProgressGranularity.Week">Semanal</option>
+                            <option value="@ProgressGranularity.Month">Mensal</option>
+                        </select>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (progressPoints == null || progressPoints.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Sem dados no período.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Período</th>
+                                        <th class="text-end">Treinos</th>
+                                        <th class="text-end">Volume (kg)</th>
+                                        <th class="text-end">Duração</th>
+                                        <th class="text-end">Kcal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pp in progressPoints)
+                                    {
+                                        <tr>
+                                            <td>@pp.PeriodStart.ToString("dd/MM/yyyy")</td>
+                                            <td class="text-end">@pp.WorkoutsCount</td>
+                                            <td class="text-end">@pp.TotalVolumeKg?.ToString("N0")</td>
+                                            <td class="text-end">@FormatDuration(pp.TotalDurationSeconds)</td>
+                                            <td class="text-end">@pp.TotalCalories</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Distribuição Muscular</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (muscleDistribution == null || muscleDistribution.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Sem dados no período.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var m in muscleDistribution.OrderByDescending(x => x.PercentageOfTotal))
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span><strong>@m.Muscle</strong> <small class="text-muted">(@m.SetsCount séries)</small></span>
+                                            <span class="fw-bold">@m.PercentageOfTotal.ToString("F1")%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" style="width:@m.PercentageOfTotal%"></div>
+                                        </div>
+                                        <div class="small text-muted mt-1">Volume: @m.TotalVolumeKg.ToString("N0") kg</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Top Exercícios</h5>
+                        <select class="form-select form-select-sm w-auto" value="@exerciseRankBy" @onchange="async (ChangeEventArgs e) => { exerciseRankBy = Enum.Parse<ExerciseRankBy>(e.Value!.ToString()!); await LoadTopExercises(); }">
+                            <option value="@ExerciseRankBy.Volume">Por Volume</option>
+                            <option value="@ExerciseRankBy.Frequency">Por Frequência</option>
+                            <option value="@ExerciseRankBy.Sets">Por Séries</option>
+                        </select>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (topExercises == null || topExercises.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Sem dados no período.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Exercício</th>
+                                        <th class="text-end">Treinos</th>
+                                        <th class="text-end">Séries</th>
+                                        <th class="text-end">Volume</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ex in topExercises)
+                                    {
+                                        <tr>
+                                            <td><span class="badge bg-secondary">@ex.Rank</span></td>
+                                            <td>@ex.ExerciseName</td>
+                                            <td class="text-end">@ex.WorkoutsCount</td>
+                                            <td class="text-end">@ex.CompletedSetsCount/@ex.SetsCount</td>
+                                            <td class="text-end">@ex.TotalVolumeKg?.ToString("N0") kg</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recordes Pessoais</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (personalRecords == null || personalRecords.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Nenhum recorde pessoal encontrado.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Exercício</th>
+                                        <th>Tipo</th>
+                                        <th class="text-end">Valor</th>
+                                        <th>Reps</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pr in personalRecords.OrderByDescending(x => x.AchievedAt))
+                                    {
+                                        <tr>
+                                            <td>@pr.ExerciseName</td>
+                                            <td><span class="badge bg-info">@pr.RecordType</span></td>
+                                            <td class="text-end fw-bold">@pr.Value @pr.Unit</td>
+                                            <td>@pr.Reps</td>
+                                            <td>@pr.AchievedAt.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private DateTime? filterFrom;
+    private DateTime? filterTo;
+    private DateTime calendarMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private ProgressGranularity granularity = ProgressGranularity.Week;
+    private ExerciseRankBy exerciseRankBy = ExerciseRankBy.Volume;
+
+    private WorkoutSummaryResponse? summary;
+    private IReadOnlyList<WorkoutCalendarDayResponse>? calendarDays;
+    private IReadOnlyList<WorkoutProgressPointResponse>? progressPoints;
+    private IReadOnlyList<MuscleVolumeItemResponse>? muscleDistribution;
+    private IReadOnlyList<ExerciseRankItemResponse>? topExercises;
+    private IReadOnlyList<PersonalRecordItemResponse>? personalRecords;
+
+    private List<DateOnly?[]> calendarWeeks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            filterFrom = DateTime.Now.AddMonths(-1).Date;
+            filterTo = DateTime.Now.Date;
+            await LoadAll();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao carregar dados: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadAll()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var from = filterFrom.HasValue ? new DateTimeOffset(filterFrom.Value.Date) : (DateTimeOffset?)null;
+            var to = filterTo.HasValue ? new DateTimeOffset(filterTo.Value.Date.AddDays(1).AddTicks(-1)) : (DateTimeOffset?)null;
+
+            var tasks = new Task[]
+            {
+                LoadSummary(from, to),
+                LoadCalendar(),
+                LoadProgress(from, to),
+                LoadMuscleDistribution(from, to),
+                LoadTopExercises(from, to),
+                LoadRecords()
+            };
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadSummary(DateTimeOffset? from, DateTimeOffset? to)
+    {
+        summary = await rep.GetMySummary(from, to);
+    }
+
+    private async Task LoadCalendar()
+    {
+        calendarDays = await rep.GetMyCalendar(calendarMonth.Year, calendarMonth.Month);
+        BuildCalendarWeeks();
+    }
+
+    private async Task LoadProgress()
+    {
+        var from = filterFrom.HasValue ? new DateTimeOffset(filterFrom.Value.Date) : (DateTimeOffset?)null;
+        var to = filterTo.HasValue ? new DateTimeOffset(filterTo.Value.Date.AddDays(1).AddTicks(-1)) : (DateTimeOffset?)null;
+        await LoadProgress(from, to);
+    }
+
+    private async Task LoadProgress(DateTimeOffset? from, DateTimeOffset? to)
+    {
+        progressPoints = await rep.GetMyProgress(from, to, granularity);
+    }
+
+    private async Task LoadMuscleDistribution(DateTimeOffset? from, DateTimeOffset? to)
+    {
+        muscleDistribution = await rep.GetMyMuscleDistribution(from, to);
+    }
+
+    private async Task LoadTopExercises()
+    {
+        var from = filterFrom.HasValue ? new DateTimeOffset(filterFrom.Value.Date) : (DateTimeOffset?)null;
+        var to = filterTo.HasValue ? new DateTimeOffset(filterTo.Value.Date.AddDays(1).AddTicks(-1)) : (DateTimeOffset?)null;
+        await LoadTopExercises(from, to);
+    }
+
+    private async Task LoadTopExercises(DateTimeOffset? from, DateTimeOffset? to)
+    {
+        topExercises = await rep.GetMyTopExercises(from, to, 10, exerciseRankBy);
+    }
+
+    private async Task LoadRecords()
+    {
+        personalRecords = await rep.GetMyRecords();
+    }
+
+    private async Task PreviousMonth()
+    {
+        calendarMonth = calendarMonth.AddMonths(-1);
+        await LoadCalendar();
+    }
+
+    private async Task NextMonth()
+    {
+        calendarMonth = calendarMonth.AddMonths(1);
+        await LoadCalendar();
+    }
+
+    private void BuildCalendarWeeks()
+    {
+        calendarWeeks = new List<DateOnly?[]>();
+        var firstDay = new DateOnly(calendarMonth.Year, calendarMonth.Month, 1);
+        var startOfWeek = firstDay.AddDays(-(int)firstDay.DayOfWeek);
+        var current = startOfWeek;
+        var daysInMonth = DateTime.DaysInMonth(calendarMonth.Year, calendarMonth.Month);
+        var lastDay = new DateOnly(calendarMonth.Year, calendarMonth.Month, daysInMonth);
+
+        while (current <= lastDay || calendarWeeks.Count < 6)
+        {
+            var week = new DateOnly?[7];
+            for (var i = 0; i < 7; i++)
+            {
+                week[i] = current;
+                current = current.AddDays(1);
+            }
+            calendarWeeks.Add(week);
+            if (calendarWeeks.Count >= 6) break;
+        }
+    }
+
+    private static string FormatDuration(long? seconds)
+    {
+        if (!seconds.HasValue || seconds.Value == 0) return "0m";
+        var ts = TimeSpan.FromSeconds(seconds.Value);
+        if (ts.TotalHours >= 1) return $"{(int)ts.TotalHours}h {ts.Minutes}m";
+        return $"{ts.Minutes}m {ts.Seconds}s";
+    }
+}

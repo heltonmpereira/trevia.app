@@ -1,0 +1,347 @@
+@page "/consents"
+@using TreviaApp.Contracts.Consents.Requests
+@using TreviaApp.Contracts.Consents.Responses
+@using TreviaApp.Shared.Enums
+@inject TreviaApp.Client.Services.Consents.IConsentsService consents
+
+<PageTitle>Consentimentos</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Consentimentos</h1>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Versões Disponíveis</h5>
+                        <button class="btn btn-primary btn-sm" @onclick="AcceptAllPending" disabled="@pendingToAcceptCount == 0">
+                            ✓ Aceitar todos pendentes (@pendingToAcceptCount)
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (consentVersions == null || consentVersions.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Nenhuma versão de consentimento encontrada.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:40px;">
+                                            <input type="checkbox" class="form-check-input" checked="@selectAllVersions" @onchange="(ChangeEventArgs e) => { selectAllVersions = (bool)e.Value!; ToggleSelectAll(); }" />
+                                        </th>
+                                        <th>Tipo de Consentimento</th>
+                                        <th>Versão Atual</th>
+                                        <th>Data de Lançamento</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cv in consentVersions)
+                                    {
+                                        var myConsent = myConsents?.FirstOrDefault(c => c.ConsentType == cv.ConsentType && !c.IsRevoked);
+                                        var isAccepted = myConsent != null && myConsent.ConsentVersion == cv.CurrentVersion;
+                                        var needsUpdate = myConsent != null && myConsent.ConsentVersion != cv.CurrentVersion;
+                                        var isSelected = selectedVersions.Contains(cv.ConsentType);
+
+                                        <tr class="@(needsUpdate ? "table-warning" : isAccepted ? "table-success" : "")">
+                                            <td>
+                                                @if (!isAccepted)
+                                                {
+                                                    <input type="checkbox" class="form-check-input" checked="@isSelected" @onchange="(e) => ToggleSelect(cv.ConsentType, e.Value)" />
+                                                }
+                                            </td>
+                                            <td>
+                                                <strong>@cv.ConsentType</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">@cv.CurrentVersion</span>
+                                                @if (needsUpdate)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1">Atualização disponível</span>
+                                                }
+                                            </td>
+                                            <td>@cv.ReleasedAt.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @if (isAccepted)
+                                                {
+                                                    <span class="badge bg-success">✓ Aceito (v@myConsent!.ConsentVersion)</span>
+                                                }
+                                                else if (needsUpdate)
+                                                {
+                                                    <span class="badge bg-warning text-dark">⚡ Atualização pendente</span>
+                                                }
+                                                else if (myConsent != null && myConsent.IsRevoked)
+                                                {
+                                                    <span class="badge bg-danger">✗ Revogado</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Pendente</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                @if (!isAccepted)
+                                                {
+                                                    <button class="btn btn-success btn-sm" @onclick="async () => await AcceptSingle(cv)">
+                                                        Aceitar
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Meus Consentimentos Atuais</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (myConsents == null || myConsents.Count == 0)
+                        {
+                            <p class="text-muted text-center py-5">Nenhum consentimento registrado.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var c in myConsents.OrderByDescending(x => x.AcceptedAt))
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <h6 class="mb-0">@c.ConsentType</h6>
+                                                    <span class="badge bg-info">v@c.ConsentVersion</span>
+                                                    @if (c.IsRevoked)
+                                                    {
+                                                        <span class="badge bg-danger">Revogado</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success">Ativo</span>
+                                                    }
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <span>Aceito em: @c.AcceptedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                                    @if (c.IsRevoked)
+                                                    {
+                                                        <span class="ms-3">Revogado em: @c.RevokedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                                                        if (!string.IsNullOrEmpty(c.RevocationReason))
+                                                        {
+                                                            <span class="ms-3">Motivo: @c.RevocationReason</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                            @if (!c.IsRevoked)
+                                            {
+                                                <div>
+                                                    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#revoke_@c.Id">
+                                                        Revogar
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (!c.IsRevoked)
+                                        {
+                                            <div class="collapse mt-3" id="revoke_@c.Id">
+                                                <div class="card card-body bg-light border-0">
+                                                    <div class="row g-2 align-items-end">
+                                                        <div class="col-md-8">
+                                                            <label class="form-label small">Motivo da revogação (opcional)</label>
+                                                            <input type="text" class="form-control form-control-sm" @bind="revokeReasons[c.Id]" placeholder="Informe o motivo..." />
+                                                        </div>
+                                                        <div class="col-md-4 text-end">
+                                                            <button class="btn btn-danger btn-sm" @onclick="async () => await RevokeConsent(c)">
+                                                                Confirmar Revogação
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private List<ConsentVersionInfoResponse>? consentVersions;
+    private List<ConsentResponse>? myConsents;
+    private HashSet<ConsentType> selectedVersions = new();
+    private bool selectAllVersions;
+    private Dictionary<Guid, string> revokeReasons = new();
+
+    private int pendingToAcceptCount
+    {
+        get
+        {
+            if (consentVersions == null || myConsents == null) return 0;
+            return consentVersions.Count(cv =>
+            {
+                var mc = myConsents.FirstOrDefault(c => c.ConsentType == cv.ConsentType && !c.IsRevoked);
+                return mc == null || mc.ConsentVersion != cv.CurrentVersion;
+            });
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            consentVersions = await consents.GetConsentVersions();
+            myConsents = await consents.GetMyConsents(includeRevoked: true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        try
+        {
+            consentVersions = await consents.GetConsentVersions();
+            myConsents = await consents.GetMyConsents(includeRevoked: true);
+            selectedVersions.Clear();
+            selectAllVersions = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+    }
+
+    private void ToggleSelectAll()
+    {
+        if (consentVersions == null) return;
+        selectedVersions.Clear();
+        if (selectAllVersions)
+        {
+            foreach (var cv in consentVersions)
+            {
+                var myConsent = myConsents?.FirstOrDefault(c => c.ConsentType == cv.ConsentType && !c.IsRevoked);
+                var isAccepted = myConsent != null && myConsent.ConsentVersion == cv.CurrentVersion;
+                if (!isAccepted) selectedVersions.Add(cv.ConsentType);
+            }
+        }
+    }
+
+    private void ToggleSelect(ConsentType type, object? checkedValue)
+    {
+        if (checkedValue is bool isChecked)
+        {
+            if (isChecked) selectedVersions.Add(type);
+            else selectedVersions.Remove(type);
+        }
+    }
+
+    private async Task AcceptSingle(ConsentVersionInfoResponse cv)
+    {
+        try
+        {
+            var req = new GiveConsentBatchRequest(new[] { new GiveConsentRequest(cv.ConsentType, cv.CurrentVersion) });
+            await consents.GiveConsentBatch(req);
+            successMessage = $"Consentimento '{cv.ConsentType}' aceito com sucesso!";
+            errorMessage = null;
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+            successMessage = null;
+        }
+    }
+
+    private async Task AcceptAllPending()
+    {
+        try
+        {
+            if (consentVersions == null) return;
+            var list = new List<GiveConsentRequest>();
+            var toAccept = selectedVersions.Count > 0 ? selectedVersions : null;
+
+            foreach (var cv in consentVersions)
+            {
+                var myConsent = myConsents?.FirstOrDefault(c => c.ConsentType == cv.ConsentType && !c.IsRevoked);
+                var isAccepted = myConsent != null && myConsent.ConsentVersion == cv.CurrentVersion;
+                if (isAccepted) continue;
+                if (toAccept != null && !toAccept.Contains(cv.ConsentType)) continue;
+                list.Add(new GiveConsentRequest(cv.ConsentType, cv.CurrentVersion));
+            }
+
+            if (list.Count == 0) { successMessage = "Nenhum consentimento pendente."; return; }
+
+            await consents.GiveConsentBatch(new GiveConsentBatchRequest(list));
+            successMessage = $"{list.Count} consentimento(s) aceito(s) com sucesso!";
+            errorMessage = null;
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+            successMessage = null;
+        }
+    }
+
+    private async Task RevokeConsent(ConsentResponse c)
+    {
+        try
+        {
+            revokeReasons.TryGetValue(c.Id, out var reason);
+            await consents.RevokeConsent(new RevokeConsentRequest(c.ConsentType, reason));
+            successMessage = $"Consentimento '{c.ConsentType}' revogado.";
+            errorMessage = null;
+            revokeReasons.Remove(c.Id);
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+            successMessage = null;
+        }
+    }
+}
