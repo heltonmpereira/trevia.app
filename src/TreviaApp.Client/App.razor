@@ -1,6 +1,62 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+@using TreviaApp.Client.Components
+@using TreviaApp.Client.Services
+@inject IWorkoutOfflineStorage WorkoutStorage
+@inject ICurrentUserIdProvider UserIdProvider
+@implements IAsyncDisposable
+
+<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>
+
+<ResumeWorkoutModal @ref="_resumeModal"
+                    OnResume="HandleResumeWorkout"
+                    OnDiscard="HandleDiscardWorkout" />
+
+@code {
+    private ResumeWorkoutModal? _resumeModal;
+    private string? _userId;
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await CheckSavedWorkoutAsync();
+        }
+    }
+
+    private async Task CheckSavedWorkoutAsync()
+    {
+        try
+        {
+            _userId = await UserIdProvider.GetCurrentUserIdAsync();
+            if (!string.IsNullOrEmpty(_userId) && _resumeModal != null)
+            {
+                bool hasSaved = await WorkoutStorage.HasSavedWorkoutAsync(_userId);
+                if (hasSaved)
+                {
+                    await _resumeModal.CheckAndShowAsync(_userId);
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task HandleResumeWorkout(WorkoutInProgressData data)
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleDiscardWorkout()
+    {
+        await Task.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

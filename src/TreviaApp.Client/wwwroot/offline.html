@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Sem Conexão — TreviaApp</title>
+    <meta name="theme-color" content="#1b6ec2" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .offline-card {
+            max-width: 480px;
+            margin: 10vh auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        .offline-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        .offline-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1b6ec2;
+            margin-bottom: 1rem;
+        }
+        .offline-text {
+            color: #6c757d;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .retry-btn {
+            background: linear-gradient(135deg, #1b6ec2 0%, #258cfb 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.9rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(27, 110, 194, 0.3);
+        }
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(27, 110, 194, 0.4);
+        }
+        .features-list {
+            text-align: left;
+            margin: 1.5rem 0 2rem;
+            padding-left: 0;
+            list-style: none;
+        }
+        .features-list li {
+            padding: 0.6rem 0;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .features-list li::before {
+            content: "✅";
+            font-size: 1.1rem;
+        }
+        .retry-wrapper {
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="offline-icon">📡</div>
+        <h1 class="offline-title">Você está offline</h1>
+        <p class="offline-text">
+            Não detectamos uma conexão com a internet no momento.<br />
+            Seus treinos continuarão funcionando normalmente!
+        </p>
+        <ul class="features-list">
+            <li>Continuar um treino em andamento</li>
+            <li>Cadastrar séries e cargas localmente</li>
+            <li>Visualizar fichas já carregadas</li>
+            <li>Tudo será sincronizado ao voltar online</li>
+        </ul>
+        <div class="retry-wrapper">
+            <button class="retry-btn" onclick="location.reload()">
+                🔄 Tentar novamente
+            </button>
+        </div>
+    </div>
+</body>
+</html>

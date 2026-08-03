@@ -16,6 +16,7 @@ using TreviaApp.Domain.TrainingPlans;
 using TreviaApp.Domain.WorkoutExecution;
 using TreviaApp.Domain.WorkoutExecution.Feedback;
 using TreviaApp.Infrastructure.Identity;
+using TreviaApp.Domain.Identity;
 
 public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IApplicationDbContext
 {
@@ -56,6 +57,7 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<WeeklyMissionDefinition> WeeklyMissionDefinitions => Set<WeeklyMissionDefinition>();
     public DbSet<UserDailyMission> UserDailyMissions => Set<UserDailyMission>();
     public DbSet<UserWeeklyMission> UserWeeklyMissions => Set<UserWeeklyMission>();
+    public DbSet<ProcessedClientRequest> ProcessedClientRequests => Set<ProcessedClientRequest>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -115,6 +117,8 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         builder.Entity<WeeklyMissionDefinition>().HasQueryFilter(m => !m.IsDeleted);
         builder.Entity<UserDailyMission>().HasQueryFilter(m => !m.IsDeleted);
         builder.Entity<UserWeeklyMission>().HasQueryFilter(m => !m.IsDeleted);
+
+        builder.Entity<ProcessedClientRequest>().HasIndex(p => new { p.UserId, p.RequestId }).IsUnique();
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)

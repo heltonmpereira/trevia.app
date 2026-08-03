@@ -1,5 +1,18 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
 }
 
 h1:focus {
@@ -34,6 +47,129 @@ a, .btn-link {
 
 .validation-message {
     color: red;
+}
+
+.page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 767.98px) {
+    .page {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        max-height: 60vh;
+        overflow-y: auto;
+        order: 0;
+    }
+    .main {
+        order: 1;
+        width: 100%;
+    }
+    .content {
+        padding: 0.75rem;
+    }
+    .top-row {
+        padding: 0.5rem 0.75rem !important;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+    }
+    .top-row a, .top-row .btn-link {
+        white-space: nowrap;
+        margin-left: 0.25rem;
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 420px) {
+    html {
+        font-size: 14px;
+    }
+    body {
+        font-size: 0.92rem;
+    }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.1rem; }
+    .btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        min-height: 44px;
+    }
+    .form-control, .form-select {
+        min-height: 44px;
+        font-size: 1rem;
+    }
+    .content {
+        padding: 0.5rem;
+    }
+    .px-4 {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    .py-3 {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+    .my-4 {
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .card {
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+    }
+    .card-body {
+        padding: 0.75rem;
+    }
+    .modal-content {
+        border-radius: 16px;
+        margin: 0.5rem;
+        max-width: calc(100vw - 1rem);
+    }
+    .modal-header, .modal-body, .modal-footer {
+        padding: 0.75rem;
+    }
+    .list-group-item {
+        padding: 0.5rem 0.75rem;
+    }
+    .badge {
+        font-size: 0.72rem;
+        padding: 0.25em 0.5em;
+    }
+    input, textarea, select, button {
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    html {
+        font-size: 13px;
+    }
+    .content {
+        padding: 0.35rem;
+    }
+    .px-4 {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .page {
+        flex-direction: row;
+    }
+}
+
+@supports (padding: max(0px)) {
+    .content {
+        padding-left: max(0.75rem, env(safe-area-inset-left));
+        padding-right: max(0.75rem, env(safe-area-inset-right));
+    }
 }
 
 #blazor-error-ui {

@@ -1,0 +1,166 @@
+@using TreviaApp.Client.Services
+@inject IPwaInstallPromptService InstallService
+@implements IAsyncDisposable
+
+@if (!InstallService.IsRunningStandalone && _canInstall)
+{
+    <div class="pwa-install-banner">
+        <div class="pwa-install-content">
+            <span class="pwa-install-icon">📱</span>
+            <div class="pwa-install-texts">
+                <strong class="pwa-install-title">Instalar TreviaApp</strong>
+                <span class="pwa-install-subtitle">Adicione à tela inicial para usar offline</span>
+            </div>
+            <button class="pwa-install-btn" @onclick="HandleInstall">
+                Instalar
+            </button>
+            <button class="pwa-install-dismiss" @onclick="() => _dismissed = true" aria-label="Fechar">
+                ✕
+            </button>
+        </div>
+    </div>
+}
+
+<style>
+.pwa-install-banner {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: linear-gradient(135deg, #1b6ec2 0%, #258cfb 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.pwa-install-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+.pwa-install-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.pwa-install-texts {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-install-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.pwa-install-subtitle {
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
+
+.pwa-install-btn {
+    background: white;
+    color: #1b6ec2;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.pwa-install-btn:hover {
+    background: #f0f7ff;
+    transform: translateY(-1px);
+}
+
+.pwa-install-btn:active {
+    transform: translateY(0);
+}
+
+.pwa-install-dismiss {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pwa-install-dismiss:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 420px) {
+    .pwa-install-content {
+        padding: 0.6rem 0.75rem;
+        gap: 0.5rem;
+    }
+    .pwa-install-icon {
+        font-size: 1.5rem;
+    }
+    .pwa-install-title {
+        font-size: 0.85rem;
+    }
+    .pwa-install-subtitle {
+        font-size: 0.72rem;
+    }
+    .pwa-install-btn {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.82rem;
+    }
+}
+</style>
+
+@code {
+    private bool _canInstall;
+    private bool _dismissed;
+
+    protected override void OnInitialized()
+    {
+        InstallService.OnPromptChanged += HandlePromptChanged;
+        _canInstall = InstallService.CanInstall && !_dismissed;
+        base.OnInitialized();
+    }
+
+    private void HandlePromptChanged()
+    {
+        _canInstall = InstallService.CanInstall && !_dismissed;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleInstall()
+    {
+        var accepted = await InstallService.ShowInstallPromptAsync();
+        if (accepted)
+        {
+            _dismissed = true;
+            _canInstall = false;
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        InstallService.OnPromptChanged -= HandlePromptChanged;
+        return ValueTask.CompletedTask;
+    }
+}

@@ -1,0 +1,242 @@
+@using TreviaApp.Client.Services
+
+@inject IWorkoutOfflineStorage WorkoutStorage
+@inject IJSRuntime JSRuntime
+
+@if (_show && _savedData != null)
+{
+    <div class="modal-overlay" @onclick="() => { }">
+        <div class="resume-modal" role="dialog" aria-modal="true" aria-labelledby="resume-title">
+            <div class="resume-icon">🏋️</div>
+            <h3 id="resume-title" class="resume-title">Você tem um treino em andamento</h3>
+            <div class="resume-details">
+                <div class="resume-detail-item">
+                    <span class="resume-label">Iniciado em</span>
+                    <span class="resume-value">@_startTimeDisplay</span>
+                </div>
+                <div class="resume-detail-item">
+                    <span class="resume-label">Tempo decorrido</span>
+                    <span class="resume-value">@_elapsedDisplay</span>
+                </div>
+                <div class="resume-detail-item">
+                    <span class="resume-label">Progresso</span>
+                    <span class="resume-value">@_progressText</span>
+                </div>
+            </div>
+
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill" style="width: @_progressPercent%"></div>
+            </div>
+
+            <div class="resume-actions">
+                <button class="btn-resume btn-discard" @onclick="HandleDiscard">
+                    Descartar
+                </button>
+                <button class="btn-resume btn-resume-primary" @onclick="HandleResume">
+                    ▶ Retomar Treino
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.resume-modal {
+    background: white;
+    border-radius: 20px;
+    max-width: 440px;
+    width: 100%;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    animation: slideUp 0.3s ease-out;
+}
+
+.resume-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.resume-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1b6ec2;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+}
+
+.resume-details {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.resume-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+.resume-detail-item:last-child { border-bottom: none; }
+
+.resume-label {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.resume-value {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.progress-bar-wrapper {
+    background: #e2e8f0;
+    border-radius: 12px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar-fill {
+    background: linear-gradient(90deg, #1b6ec2, #258cfb);
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.5s ease;
+}
+
+.resume-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-resume {
+    flex: 1;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 48px;
+}
+
+.btn-discard {
+    background: #f1f5f9;
+    color: #64748b;
+}
+.btn-discard:hover { background: #e2e8f0; }
+
+.btn-resume-primary {
+    background: linear-gradient(135deg, #1b6ec2 0%, #258cfb 100%);
+    color: white;
+    box-shadow: 0 4px 14px rgba(27, 110, 194, 0.35);
+}
+.btn-resume-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(27, 110, 194, 0.45);
+}
+
+@media (max-width: 420px) {
+    .resume-modal { padding: 1.5rem 1.1rem; }
+    .resume-title { font-size: 1.15rem; }
+    .resume-actions { flex-direction: column-reverse; }
+    .btn-resume { width: 100%; }
+}
+</style>
+
+@code {
+    [Parameter] public string? UserId { get; set; }
+    [Parameter] public EventCallback<WorkoutInProgressData> OnResume { get; set; }
+    [Parameter] public EventCallback OnDiscard { get; set; }
+
+    private bool _show;
+    private WorkoutInProgressData? _savedData;
+
+    public async Task CheckAndShowAsync(string userId)
+    {
+        UserId = userId;
+        _savedData = await WorkoutStorage.LoadCurrentWorkoutAsync(userId);
+        _show = _savedData != null;
+        StateHasChanged();
+    }
+
+    private string _startTimeDisplay =>
+        _savedData != null && DateTimeOffset.TryParse(_savedData.StartedAt, out var dto)
+            ? dto.ToLocalTime().ToString("HH:mm")
+            : "-";
+
+    private string _elapsedDisplay
+    {
+        get
+        {
+            if (_savedData == null) return "-";
+            var ts = TimeSpan.FromSeconds(_savedData.ElapsedSeconds);
+            return ts.TotalHours >= 1
+                ? $"{(int)ts.TotalHours}h {ts.Minutes}min"
+                : $"{ts.Minutes}min {ts.Seconds}s";
+        }
+    }
+
+    private string _progressText
+    {
+        get
+        {
+            if (_savedData == null || !_savedData.Exercises.Any()) return "0 exercícios";
+            int totalSets = _savedData.Exercises.Sum(e => e.TotalSets);
+            int completedSets = _savedData.Exercises.Sum(e => e.CompletedSets);
+            return $"{completedSets}/{totalSets} séries";
+        }
+    }
+
+    private int _progressPercent
+    {
+        get
+        {
+            if (_savedData == null || !_savedData.Exercises.Any()) return 0;
+            int total = _savedData.Exercises.Sum(e => e.TotalSets);
+            if (total == 0) return 0;
+            int done = _savedData.Exercises.Sum(e => e.CompletedSets);
+            return Math.Min(100, (int)Math.Round((double)done / total * 100));
+        }
+    }
+
+    private async Task HandleResume()
+    {
+        if (_savedData != null)
+        {
+            _show = false;
+            await OnResume.InvokeAsync(_savedData);
+        }
+    }
+
+    private async Task HandleDiscard()
+    {
+        if (!string.IsNullOrEmpty(UserId) && _savedData != null)
+        {
+            await WorkoutStorage.ClearCurrentWorkoutAsync(UserId);
+        }
+        _savedData = null;
+        _show = false;
+        StateHasChanged();
+        await OnDiscard.InvokeAsync();
+    }
+}

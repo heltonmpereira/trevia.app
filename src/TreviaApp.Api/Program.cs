@@ -1,9 +1,10 @@
 using Serilog;
 using TreviaApp.Api.Extensions;
+using TreviaApp.Api.Middlewares;
 using TreviaApp.Infrastructure.DependencyInjection;
 using TreviaApp.Infrastructure.Persistence.Seeder;
 using TreviaApp.Application.DependencyInjection;
-using TreviaApp.Api.Middlewares;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,9 +23,34 @@ builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddApiAuthorizationPolicies();
 
+var isMigrateOnly = args.Any(a =>
+    a.Equals("--migrate-only", StringComparison.OrdinalIgnoreCase) ||
+    a.Equals("/migrate-only", StringComparison.OrdinalIgnoreCase));
+
 var app = builder.Build();
 
+if (isMigrateOnly)
+{
+    Log.Information("Running in --migrate-only mode: applying migrations then exiting...");
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider
+        .GetRequiredService<TreviaApp.Infrastructure.Persistence.ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+    Log.Information("Migrations applied successfully.");
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAllAsync();
+    Log.Information("Seeding completed. Exiting.");
+    await app.StopAsync();
+    return;
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -36,10 +62,14 @@ app.UseSerilogRequestLogging();
 
 app.UseCors("AllowFrontend");
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers()
+   .RequireRateLimiting(TreviaApp.Shared.Constants.RateLimitPolicyNames.FixedWindowDefault);
+
 app.MapCustomHealthChecks();
 app.UseSwaggerUi();
 
@@ -50,6 +80,7 @@ if (app.Environment.IsDevelopment())
     await seeder.SeedAllAsync();
 }
 
+Log.Information("TreviaApp API started in {Env} mode.", app.Environment.EnvironmentName);
 app.Run();
 
 public partial class Program { }
