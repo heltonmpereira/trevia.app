@@ -1,13 +1,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Write-Host "==> TreviaApp - Aplicando Migrações PostgreSQL (PowerShell) == -ForegroundColor Cyan
+Write-Host "==> TreviaApp - Aplicando Migracoes PostgreSQL (PowerShell) <==" -ForegroundColor Cyan
 
 $SolutionRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $SolutionRoot
 
-if (-not (Test-Path ".\src\TreviaApp.Api\TreviaApp.Api.csproj)) {
-    throw "TreviaApp.Api.csproj não encontrado no diretório esperado."
+if (-not (Test-Path ".\src\TreviaApp.Api\TreviaApp.Api.csproj")) {
+    throw "TreviaApp.Api.csproj nao encontrado no diretorio esperado."
 }
 
 Write-Host ""

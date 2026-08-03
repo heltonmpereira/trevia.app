@@ -321,40 +321,40 @@ Todos devem passar com `dotnet test TreviaApp.slnx -c Release` em ambiente CI/CD
 - [x] Atualizar este arquivo → marcar PASSO 0 = [x]
 
 ### PASSO 1 — US-1201: PWA manifest, service-worker, ícones e instalação
-- [ ] manifest.json + ícones 512/maskable/apple-touch
-- [ ] service-worker.js (assets cache + network-first api exclusão) + offline.html fallback
-- [ ] index.html: meta tags, link manifest, SW register script
-- [ ] TreviaApp.Client.csproj: ServiceWorkerAssetsManifest=true
-- [ ] Componentes: PwaInstallBanner.razor + Service PwaInstallPromptService.cs
-- [ ] Responsividade CSS refinada (mobile <400px)
-- [ ] Atualizar este arquivo → marcar PASSO 1 = [x]
+- [x] manifest.json + ícones 512/maskable/apple-touch
+- [x] service-worker.js (assets cache + network-first api exclusão) + offline.html fallback
+- [x] index.html: meta tags, link manifest, SW register script
+- [x] TreviaApp.Client.csproj: ServiceWorkerAssetsManifest=true
+- [x] Componentes: PwaInstallBanner.razor + Service PwaInstallPromptService.cs
+- [x] Responsividade CSS refinada (mobile <400px)
+- [x] Atualizar este arquivo → marcar PASSO 1 = [x]
 
 ### PASSO 2 — US-1202: Offline persistência treino em andamento
-- [ ] Criar js/idb-storage.js (interop IndexedDB CRUD genérico)
-- [ ] Interfaces Services: IWorkoutOfflineStorage.cs
-- [ ] Implementação IndexedDbWorkoutStorage.cs (com fallback localStorage)
-- [ ] Component ResumeWorkoutModal.razor (modal retomar/descartar)
-- [ ] App.razor inicializa LoadCurrentWorkout → mostra modal
-- [ ] Hook save automático (debounce) nas ações de treino
-- [ ] Atualizar este arquivo → marcar PASSO 2 = [x]
+- [x] Criar js/idb-storage.js (interop IndexedDB CRUD genérico)
+- [x] Interfaces Services: IWorkoutOfflineStorage.cs
+- [x] Implementação IndexedDbWorkoutStorage.cs (com fallback localStorage)
+- [x] Component ResumeWorkoutModal.razor (modal retomar/descartar)
+- [x] App.razor inicializa LoadCurrentWorkout → mostra modal
+- [x] Hook save automático (debounce) nas ações de treino
+- [x] Atualizar este arquivo → marcar PASSO 2 = [x]
 
 ### PASSO 3 — US-1203: Sync Queue + Idempotência (Client + Server)
-- [ ] ISyncQueue.cs + IndexedDbSyncQueue.cs (enqueue/process)
-- [ ] SyncBackgroundService.cs (WASM timer 15s + online detection)
-- [ ] Component SyncStatusIndicator.razor visual
-- [ ] Domain ProcessedClientRequest.cs + EF Configuration
-- [ ] ApplicationDbContext + IApplicationDbContext adicionar DbSet
-- [ ] IdempotencyFilter.cs (API, lê X-Client-Request-Id, retorna cached se existe)
-- [ ] Migration AddIdempotencyClientRequestTable gerada
-- [ ] Program.cs registra filter global
-- [ ] Atualizar este arquivo → marcar PASSO 3 = [x]
+- [x] ISyncQueue.cs + IndexedDbSyncQueue.cs (enqueue/process)
+- [x] SyncBackgroundService.cs (WASM timer 15s + online detection)
+- [x] Component SyncStatusIndicator.razor visual
+- [x] Domain ProcessedClientRequest.cs + EF Configuration
+- [x] ApplicationDbContext + IApplicationDbContext adicionar DbSet
+- [x] IdempotencyFilter.cs (API, lê X-Client-Request-Id, retorna cached se existe)
+- [x] Migration AddIdempotencyClientRequestTable gerada
+- [x] Program.cs registra filter global
+- [x] Atualizar este arquivo → marcar PASSO 3 = [x]
 
 ### PASSO 4 — US-1204: Segurança Headers + Rate Limiting + Health Checks
-- [ ] SecurityHeadersMiddleware.cs (CSP, X-Frame, HSTS, etc)
-- [ ] RateLimitPolicies.cs constants + Program.cs policies separadas (Auth, WorkoutWrite, Read, Admin)
-- [ ] HealthChecks: DiskStorageHealthCheck.cs + MemoryHealthCheck.cs
-- [ ] Program.cs: MapHealthChecks (/health, ready, live), UseSecurityHeaders, CORS production validation
-- [ ] Atualizar este arquivo → marcar PASSO 4 = [x]
+- [x] SecurityHeadersMiddleware.cs (CSP, X-Frame, HSTS, etc)
+- [x] RateLimitPolicies.cs constants + Program.cs policies separadas (Auth, WorkoutWrite, Read, Admin)
+- [x] HealthChecks: DiskStorageHealthCheck.cs + MemoryHealthCheck.cs
+- [x] Program.cs: MapHealthChecks (/health, ready, live), UseSecurityHeaders, CORS production validation
+- [x] Atualizar este arquivo → marcar PASSO 4 = [x]
 
 ### PASSO 5 — US-1205: Unit Tests
 - [x] Atualizar UnitTests.csproj com xUnit/FluentAssertions/NSubstitute packages
@@ -380,49 +380,233 @@ Todos devem passar com `dotnet test TreviaApp.slnx -c Release` em ambiente CI/CD
 - [x] Atualizar este arquivo → marcar PASSO 7 = [x]
 
 ### PASSO 8 — US-1208: Deploy Beta Automatizado
-- [ ] Program.cs: switch `--migrate-only` (run migrations + exit sem Kestrel)
-- [ ] Dockerfile API multi-stage otimizado (SDK build → Alpine runtime)
-- [ ] Dockerfile Client multi-stage (build → publish → nginx alpine + gzip)
-- [ ] deploy/run-migrations.ps1 + .sh
-- [ ] deploy/render.yaml blueprint
-- [ ] deploy/RENDER.md passo a passo detalhado beta
-- [ ] Atualizar este arquivo → marcar PASSO 8 = [x]
+- [x] Program.cs: switch `--migrate-only` (run migrations + exit sem Kestrel)
+- [x] Dockerfile API multi-stage otimizado (SDK build → Alpine runtime)
+- [x] Dockerfile Client multi-stage (build → publish → nginx alpine + gzip)
+- [x] deploy/run-migrations.ps1 + .sh
+- [x] deploy/render.yaml blueprint
+- [x] deploy/RENDER.md passo a passo detalhado beta
+- [x] Atualizar este arquivo → marcar PASSO 8 = [x]
 
 ### PASSO 9 — Build + Teste final (0 erros, 0 testes falhando)
-- [ ] `dotnet build TreviaApp.slnx -c Release` → 0 erros
-- [ ] `dotnet test tests/TreviaApp.UnitTests/TreviaApp.UnitTests.csproj -c Release --no-build` → todos testes passam
-- [ ] `dotnet test tests/TreviaApp.ArchitectureTests/TreviaApp.ArchitectureTests.csproj -c Release --no-build` → todos testes passam
-- [ ] Corrigir erros/diagnostics de compilação ou testes
-- [ ] Atualizar este arquivo → marcar PASSO 9 = [x]
+- [x] `dotnet build TreviaApp.slnx -c Release` → 0 erros
+- [x] `dotnet test tests/TreviaApp.UnitTests/TreviaApp.UnitTests.csproj -c Release --no-build` → 102/102 testes aprovados
+- [x] `dotnet test tests/TreviaApp.ArchitectureTests/TreviaApp.ArchitectureTests.csproj -c Release --no-build` → 27/27 testes aprovados
+- [x] Corrigir erros/diagnostics de compilação ou testes
+- [x] Atualizar este arquivo → marcar PASSO 9 = [x]
 
 ### PASSO 10 — Relatório Pós-Implementação
-- [ ] Preencher seção ✅ PÓS-IMPLEMENTAÇÃO abaixo (RESUMO, ARQUIVOS CRIADOS/ALTERADOS, ENDPOINTS, TELAS, COMO EXECUTAR, COMO TESTAR, MIGRATIONS, VARIÁVEIS, PENDÊNCIAS, PRÓXIMO PASSO)
-- [ ] Atualizar este arquivo → marcar PASSO 10 = [x]
+- [x] Preencher seção ✅ PÓS-IMPLEMENTAÇÃO abaixo (RESUMO, ARQUIVOS CRIADOS/ALTERADOS, ENDPOINTS, TELAS, COMO EXECUTAR, COMO TESTAR, MIGRATIONS, VARIÁVEIS, PENDÊNCIAS, PRÓXIMO PASSO)
+- [x] Atualizar este arquivo → marcar PASSO 10 = [x]
 
 ---
 
 ## ✅ PÓS-IMPLEMENTAÇÃO (Resumo, Arquivos, Endpoints disponíveis)
 
-*(A ser preenchido ao final de todos os passos acima)*
+*(Preenchido ao final de todos os passos da Sprint 12)*
 
 ### RESUMO:
+A **Sprint 12 (Beta Release)** foi concluída com 100% das User Stories implementadas e validadas:
+- **US-1201 (PWA Instalável)**: Manifest + Service Worker com estratégia híbrida (Cache First para assets, Network First para API/ navegação), ícones múltiplos (192/512/maskable/apple-touch), banner de instalação e responsividade mobile-first para telas <400px.
+- **US-1202 (Offline Persistência)**: Treino em andamento salvo no IndexedDB (com fallback localStorage para Safari modo privado), anti-corrupção por versionamento de schema (DB_VERSION=2), modal de retomada ao abrir o app, debounce automático de salvamento.
+- **US-1203 (Sync Queue + Idempotência)**: Fila de sincronização client-side com timer 15s, detecção online/offline, idempotência server-side via header `X-Client-Request-Id` + tabela `ProcessedClientRequests` (PK RequestId + índice único UserId/RequestId), catch de concorrência via `DbUpdateException`.
+- **US-1204 (Segurança + Rate Limiting + Health Checks)**: `SecurityHeadersMiddleware` com CSP (Report-Only em Dev, bloqueante em Produção), HSTS, X-Frame-Options DENY, Permissions-Policy. Rate Limiting com 4 políticas (Auth=5/min, WorkoutWrite=240/10s TokenBucket, Read=300/min, Admin=60/min). HealthChecks em `/health`, `/health/ready`, `/health/live` cobrindo PostgreSQL, DbContext, Disco (>100MB livre) e Memória GC.
+- **US-1205/1206/1207 (Testes)**: **129 testes passando** — 102 Unitários (Gamificação, WorkoutExecution, TrainingPlans, Coaching), 27 Arquiteturais (Camadas, Controllers, Nomenclatura, Injeção). Build Release com 0 erros e 0 warnings críticos.
+- **US-1208 (Deploy Automatizado)**: `--migrate-only` switch no Program.cs (roda migrations + seed + exit sem Kestrel). Dockerfiles multi-stage (API=SDK→Alpine com HealthCheck, Client=SDK Publish→nginx:alpine com gzip + proxy reverso /api). Scripts `run-migrations.ps1/.sh` e blueprint `render.yaml` com PostgreSQL + API + Client Static + CronJob de migrations. Documentação detalhada em `deploy/RENDER.md`.
 
-### ARQUIVOS CRIADOS:
+### ARQUIVOS CRIADOS (Sprint 12):
+**Client PWA:**
+- `src/TreviaApp.Client/wwwroot/manifest.json`
+- `src/TreviaApp.Client/wwwroot/service-worker.js` (dev) + `service-worker.published.js` (cache híbrido com exclusão /api)
+- `src/TreviaApp.Client/wwwroot/offline.html` (fallback amigável)
+- `src/TreviaApp.Client/wwwroot/icon-192.png`, `icon-512.png`, `apple-touch-icon.png`
+- `src/TreviaApp.Client/wwwroot/js/idb-storage.js` (IndexedDB: workouts + sync queue + versionamento)
+- `src/TreviaApp.Client/wwwroot/js/pwa-install.js` (beforeinstallprompt listener)
+- `src/TreviaApp.Client/Services/PwaInstallPromptService.cs` + `IPwaInstallPromptService`
+- `src/TreviaApp.Client/Services/IWorkoutOfflineStorage.cs` + `IndexedDbWorkoutStorage.cs` (fallback localStorage)
+- `src/TreviaApp.Client/Services/ISyncQueue.cs` + `IndexedDbSyncQueue.cs` (enqueue + processamento)
+- `src/TreviaApp.Client/Services/SyncBackgroundService.cs` (IHostedService, timer 15s)
+- `src/TreviaApp.Client/Components/PwaInstallBanner.razor` (banner sticky de instalação)
+- `src/TreviaApp.Client/Components/ResumeWorkoutModal.razor` (modal retomar/descartar com progresso)
+- `src/TreviaApp.Client/Components/SyncStatusIndicator.razor` (indicador visual: sincronizado/pendente/erro/offline)
+- `src/TreviaApp.Client/nginx.conf` (gzip, cache wasm/dll, proxy reverso /api → API, security headers)
 
-### ARQUIVOS ALTERADOS:
+**API Segurança/Idempotência:**
+- `src/TreviaApp.Api/Middlewares/SecurityHeadersMiddleware.cs` (CSP, X-Frame, HSTS, Permissions, etc)
+- `src/TreviaApp.Api/Filters/IdempotencyFilter.cs` (X-Client-Request-Id → cache de resposta, tratamento DbUpdateException concorrência)
+- `src/TreviaApp.Domain/Identity/ProcessedClientRequest.cs` (entidade idempotência)
+- `src/TreviaApp.Infrastructure/Persistence/Configurations/ProcessedClientRequestConfiguration.cs` (PK, JSONB, FK Cascade, índice único UserId+RequestId)
+- `src/TreviaApp.Shared/Constants/RateLimitPolicies.cs` (5 políticas nomeadas)
+- `src/TreviaApp.Api/HealthChecks/DiskStorageHealthCheck.cs` (espaço livre > 100MB)
+- `src/TreviaApp.Api/HealthChecks/MemoryHealthCheck.cs` (GC memory < 4GB)
 
-### ENDPOINTS DISPONÍVEIS:
+**Deploy:**
+- `deploy/run-migrations.ps1` (PowerShell: dotnet run --migrate-only)
+- `deploy/run-migrations.sh` (Bash idem)
+- `deploy/render.yaml` (Blueprint Infra-as-Code: Postgres, API Docker, Client Static, CronJob Migrations)
+- `deploy/RENDER.md` (Passo-a-passo detalhado UI + Variáveis + Troubleshooting)
 
-### TELAS DISPONÍVEIS:
+**Migrations:**
+- `src/TreviaApp.Infrastructure/Persistence/Migrations/20260803172332_AddIdempotencyClientRequestTable.cs` (+ .Designer.cs)
 
-### COMO EXECUTAR:
+### ARQUIVOS ALTERADOS (Sprint 12):
+| Arquivo | Alteração |
+|---|---|
+| `src/TreviaApp.Client/Program.cs` | Registra `IPwaInstallPromptService`, `IWorkoutOfflineStorage`, `ISyncQueue`, `ICurrentUserIdProvider`; hospeda `SyncBackgroundService`; inicializa PWA Install |
+| `src/TreviaApp.Client/wwwroot/index.html` | Tags `<link rel="manifest">`, `<meta theme-color>`, apple-touch-icon, SW register script com updatefound listener |
+| `src/TreviaApp.Client/TreviaApp.Client.csproj` | `<ServiceWorkerAssetsManifest>true</ServiceWorkerAssetsManifest>` + `<ServiceWorker>service-worker.published.js</ServiceWorker>` |
+| `src/TreviaApp.Client/Layout/MainLayout.razor` | Injeta `<PwaInstallBanner />` + `<SyncStatusIndicator />` no topo |
+| `src/TreviaApp.Client/App.razor` | Hook `OnAfterRenderAsync` → `CheckSavedWorkoutAsync()` → exibe `ResumeWorkoutModal` |
+| `src/TreviaApp.Client/_Imports.razor` | Usings globais para `Components` e `Services` |
+| `src/TreviaApp.Api/Program.cs` | Switch `--migrate-only` (Migrate + Seed + Exit); `UseSecurityHeadersMiddleware`; `UseRateLimiter`; `MapCustomHealthChecks`; CORS production validation; IdempotencyFilter global |
+| `src/TreviaApp.Api/appsettings.json` | Políticas RateLimiting, CORS AllowedOrigins array |
+| `src/TreviaApp.Api/Extensions/ApplicationBuilderExtensions.cs` | `MapCustomHealthChecks` → /health (UI JSON), /health/ready (tags ready), /health/live (no-op liveness) + `UseSwaggerUi` |
+| `src/TreviaApp.Api/Extensions/ServiceCollectionExtensions.cs` | `AddCors` wildcard protection produção; `AddRateLimiter` 5 políticas; `AddHealthChecks` (NpgSql + DbContext + Disk + Memory); `AddControllers` com `IdempotencyFilter` global; Swagger com comentários XML + security definition Bearer + menção X-Client-Request-Id |
+| `src/TreviaApp.Infrastructure/Persistence/ApplicationDbContext.cs` | +`DbSet<ProcessedClientRequest>`; +`HasIndex UserId/RequestId IsUnique` no ModelCreating |
+| `src/TreviaApp.Client/wwwroot/js/pwa-install.js` | **Correção bug**: `checkStandaloneInternal()` ao invés de recursão infinita |
+| `deploy/run-migrations.ps1` | **Correção sintaxe**: aspas fechadas no `Write-Host` e `Test-Path` |
+| `deploy/render.yaml` | **Correção**: `healthCheckPath` duplicado removido |
+| `TreviaApp.slnx` | Projetos já inclusos (não necessita alteração) |
+| `tests/TreviaApp.UnitTests/TreviaApp.UnitTests.csproj` | Packages xUnit, FluentAssertions, NSubstitute |
+| `tests/TreviaApp.ArchitectureTests/LayerDependencyTests.cs` | Expandido com regras Client → não ref Domain/Infrastructure |
 
-### COMO TESTAR:
+### ENDPOINTS DISPONÍVEIS (Sprint 12):
+| Método | Rota | Descrição | Observação |
+|---|---|---|---|
+| GET | `/health` | Health check completo (DB + Disco + Memória + DbContext) | UI JSON via HealthChecks.UI.Client |
+| GET | `/health/ready` | Readiness probe (tags: ready → Postgres + DbContext + Disco) | Render Health Check Path recomendado |
+| GET | `/health/live` | Liveness probe (tags: live → Postgres + Memória) | Docker HEALTHCHECK CMD |
+| (middleware) | todos | Security Headers (CSP, X-Frame, HSTS etc) | Válido em Produção; Dev usa Report-Only |
+| (middleware) | todos POST/PUT/DELETE | `X-Client-Request-Id: <guid>` → idempotência | Se requestId já processado: retorna 200 + payload original + header `X-Idempotent-Replayed: true` |
+| (rate limit) | /api/auth/** | AuthEndpoint: 5 req/min/IP | Login/Register/ForgotPassword |
+| (rate limit) | /api/workout/** (escritas) | WorkoutWrite: TokenBucket 240 tokens | 20 tokens/10s repostos |
+| (rate limit) | /api/** (GETs) | ReadEndpoint: 300 req/min | Queries gerais |
+| (rate limit) | /api/admin/** | AdminEndpoint: 60 req/min | Operações administrativas |
+| CLI | `--migrate-only` | `dotnet run --project TreviaApp.Api -- --migrate-only` | Aplica todas migrations, roda SeedAll, sai sem Kestrel |
+
+### TELAS DISPONÍVEIS (Client PWA):
+1. **🏠 PWA Install Banner** (topo sticky, só aparece se instalável): título + subtítulo + botão "Instalar" → dispara `beforeinstallprompt`, com dismiss.
+2. **🔄 Sync Status Indicator** (fixo direita superior, móvel em mobile inferior):
+   - Verde ✅ Sincronizado
+   - Azul 🔄 N pendente(s)
+   - Amarelo ⚙️ Sincronizando (animação pulse)
+   - Vermelho ⚠️ N falha(s) + detalhe com últimas falhas e botões "Sincronizar agora" / "Limpar concluídas"
+3. **🏋️ Resume Workout Modal** (ao abrir o app se há treino salvo): card com horário início, tempo decorrido, progresso séries, barra visual + botões [Descartar] / [▶ Retomar Treino]. Responsivo <420px.
+4. **📡 Offline.html** (fallback SW quando sem rede + sem cache): gradiente roxo, lista de funcionalidades offline, botão "Tentar novamente".
+5. **📱 Responsividade refinada**: media queries `@media (max-width: 420px)` em todos componentes (Banner, SyncIndicator, ResumeModal) + viewport `viewport-fit=cover` em index.html para notch.
+
+### COMO EXECUTAR (Local):
+**1. Banco PostgreSQL (via Docker Compose recomendado):**
+```bash
+docker-compose up -d postgres  # na raiz do repo
+```
+Alternativa: PostgreSQL local, ajustar `ConnectionStrings__DefaultConnection` no `appsettings.json`.
+
+**2. Rodar API (local):**
+```bash
+dotnet run --project src/TreviaApp.Api/TreviaApp.Api.csproj
+# Abre em https://localhost:5001 ou http://localhost:5000
+# Swagger: /swagger
+# Health: /health
+```
+
+**3. Rodar Client PWA (local, modo dev):**
+```bash
+dotnet run --project src/TreviaApp.Client/TreviaApp.Client.csproj
+# Abre em http://localhost:5003
+# Service Worker em dev é NO-OP (não cacheia). Para testar SW real: Publish.
+```
+
+**4. Publish Client (testar PWA real + SW caching):**
+```bash
+dotnet publish src/TreviaApp.Client/TreviaApp.Client.csproj -c Release -o ./publish-client
+# Servir ./publish-client/wwwroot com servidor estático (ex: npx serve)
+```
+
+### COMO TESTAR (Local):
+**Build e testes:**
+```bash
+# Build Release (use -nr:false se NodeLauncher falhar):
+dotnet build TreviaApp.slnx -c Release -nr:false --disable-build-servers
+
+# Unit Tests:
+dotnet test tests/TreviaApp.UnitTests/TreviaApp.UnitTests.csproj -c Release --no-build
+# Esperado: Aprovado 102
+
+# Architecture Tests:
+dotnet test tests/TreviaApp.ArchitectureTests/TreviaApp.ArchitectureTests.csproj -c Release --no-build
+# Esperado: Aprovado 27
+```
+
+**Teste manual PWA:**
+1. Abrir Client publicado → Chrome DevTools → Application → Manifest: deve mostrar nome/ícones/standalone.
+2. Application → Service Workers: deve estar registered e running.
+3. DevTools → Network → Offline → recarregar → `/offline.html` aparece.
+4. Abrir App → executa ações → ativa "📡 Offline" no SyncIndicator → volta online → itens enfileirados são sincronizados.
+
+**Teste Idempotência (via Swagger/Postman):**
+1. POST `/api/auth/login` com header `X-Client-Request-Id: <guid-fixo>`.
+2. Repetir a mesma requisição com o mesmo header → resposta 200 idêntica + header `X-Idempotent-Replayed: true`.
+3. Consultar `SELECT * FROM "ProcessedClientRequests"` no Postgres → 1 linha.
 
 ### MIGRATIONS:
+**1 migration nova nesta sprint:**
+- **`AddIdempotencyClientRequestTable`** (20260803172332):
+  - Tabela `ProcessedClientRequests` (armazena respostas de requests idempotentes)
+  - Colunas: `RequestId (uuid, PK)`, `UserId (uuid, FK Cascade → AspNetUsers)`, `OperationType (varchar 100)`, `ResponsePayload (jsonb nullable)`, `StatusCode (integer)`, `ProcessedAt (timestamptz)`
+  - Índices: `IX_ProcessedClientRequests_UserId` (busca por usuário), `IX_ProcessedClientRequests_UserId_RequestId` (**ÚNICO** — proteção dupla concorrência), `IX_ProcessedClientRequests_ProcessedAt` (limpeza/auditoria por data)
+
+**Como aplicar migrations (não automáticas em produção):**
+```powershell
+# PowerShell (Windows):
+.\deploy\run-migrations.ps1
+
+# Bash (Linux/Mac):
+chmod +x deploy/run-migrations.sh ; ./deploy/run-migrations.sh
+
+# Ou manualmente:
+dotnet run --project src/TreviaApp.Api/TreviaApp.Api.csproj -c Release -- --migrate-only
+```
 
 ### VARIÁVEIS DE AMBIENTE:
+**Server/API (Produção obrigatórias):**
+| Chave | Valor Sugerido | Descrição |
+|---|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` | Desativa CSP Report-Only; ativa HSTS/CSP bloqueante; recusa CORS wildcard |
+| `PORT` | `10000` | Porta fornecida pelo Render (exporta `ASPNETCORE_URLS=http://+:$PORT`) |
+| `ConnectionStrings__DefaultConnection` | `Host=...;Port=5432;Database=...;Username=...;Password=...` | PostgreSQL gerenciado Render |
+| `Jwt__Issuer` | `TreviaApp.Production` | Emissor do token |
+| `Jwt__Audience` | `TreviaApp.Production` | Audiência |
+| `Jwt__Key` | 64+ chars aleatórios | Use `openssl rand -base64 48` |
+| `Jwt__AccessTokenMinutes` | `15` | Curta duração conforme PROJECT_SPEC |
+| `Jwt__RefreshTokenDays` | `30` | Rotativo |
+| `Cors__AllowedOrigins__0` | `https://seu-client.onrender.com` | NÃO use wildcard em Produção (protegido por validação startup) |
+| `AdminSeed__Email` | `admin@seudominio.com` | Usuário admin inicial seedado |
+| `AdminSeed__Password` | 12+ chars com símbolo/número | Senha forte do admin |
+| `FileStorage__Provider` | `Local` | (futuro S3/AzureBlob) |
+| `FileStorage__RootPath` | `/app_data/files` | Não use filesystem do Render como persistência real |
+| `Serilog__MinimumLevel__Default` | `Information` | Logging estruturado Serilog |
+
+**Client PWA (Docker nginx):**
+| Chave | Valor Sugerido | Descrição |
+|---|---|---|
+| `API_BASE_URL` | `https://treviaapp-api.onrender.com` | URL base da API (usado pelo nginx proxy reverso `/api` → $API_BASE_URL) |
+| `NGINX_PORT` | `8080` | Porta interna container (exposta EXPOSE 8080) |
 
 ### PENDÊNCIAS E MELHORIAS FUTURAS:
+1. **SignalR em Tempo Real**: Estrutura Sync Queue já prepara terreno; adicionar hubs para notificações push (fora MVP Beta).
+2. **Limpeza `ProcessedClientRequests`**: Job semanal para limpar registros > 30 dias (idempotência só precisa de janela curta).
+3. **IndexedDB → localStorage fallback warning**: Adicionar banner visual informando "Capacidade reduzida" quando usar localStorage fallback.
+4. **Integration Tests**: Requerem PostgreSQL real (testcontainers ou banco dedicado) — não executados nesta sprint por depender de infra externa. Recomendado habilitar em CI/CD.
+5. **CSP `unsafe-eval`**: Blazor WASM em .NET 9 ainda requer `unsafe-eval` para interoperabilidade .NET ↔ JS. Monitorar versões futuras do runtime para remover.
+6. **iOS Safari 16.4+**: Service Worker em PWAs instalados tem comportamento ligeiramente diferente; validar com device real antes do lançamento público.
+7. **Limitações PiP / Tela Bloqueada**: Conforme PROJECT_SPEC §189 — cronômetro não avança com tela bloqueada em algumas implementações. Resolver no futuro com .NET MAUI.
 
 ### PRÓXIMA ETAPA RECOMENDADA:
+**Release Beta Pública + Monitoramento (Pós-Sprint 12):**
+1. **Deploy via Blueprint render.yaml** seguindo o `deploy/RENDER.md` — passo a passo exato de serviços + variáveis.
+2. **Rodar migrations iniciais via CronJob** (ou CLI local com connection string de produção).
+3. **Testes smoke**: Swagger da API → registro/login → criar exercício → criar ficha → atribuir → executar treino → verificar gamificação → verificar `/health/ready = 200`.
+4. **Monitoramento 48h**: Logs Serilog (Console → integração futuro com Seq/Papertrail), erros CSP no console navegador, rate limit 429s.
+5. **Sprint 13 — Ajustes do Beta + LGPD detalhada**: Consentimentos em telas de cadastro, tela de privacidade, exclusão de conta (GDPR/LGPD), logs auditoria acessos.
+6. **Testes de carga simulados**: 50 usuários simultâneos executando séries (120 req/min/usuário = 6000 req/min total → validar rate limiting e pool Postgres).

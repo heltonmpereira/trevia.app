@@ -25,7 +25,6 @@ services:
     dockerContext: .
     plan: starter
     healthCheckPath: /health/ready
-    healthCheckPath: /health/ready
     numInstances: 1
     autoDeploy: yes
     envVars:

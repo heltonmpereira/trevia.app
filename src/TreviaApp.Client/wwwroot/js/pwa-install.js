@@ -1,7 +1,7 @@
 let deferredPrompt = null;
 let dotNetHelper = null;
 
-function isStandalone() {
+function checkStandaloneInternal() {
     return (window.matchMedia('(display-mode: standalone)').matches) ||
            (window.navigator.standalone) ||
            document.referrer.includes('android-app://');
@@ -29,7 +29,7 @@ export async function registerInstallListener(dotNetRef) {
 }
 
 export function isStandalone() {
-    return isStandalone();
+    return checkStandaloneInternal();
 }
 
 export async function showInstallPrompt() {
