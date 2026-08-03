@@ -287,4 +287,39 @@ public static class ErrorCodes
     /// Gets the constant value for Notification Not Owner.
     /// </summary>
     public const string NotificationNotOwner = nameof(NotificationNotOwner);
+
+    /// <summary>
+    /// Gamification: Mission reward already claimed.
+    /// </summary>
+    public const string GamificationAlreadyClaimed = nameof(GamificationAlreadyClaimed);
+
+    /// <summary>
+    /// Gamification: Invalid manual points adjustment.
+    /// </summary>
+    public const string GamificationInvalidAdjustment = nameof(GamificationInvalidAdjustment);
+
+    /// <summary>
+    /// Gamification: Mission definition not found.
+    /// </summary>
+    public const string GamificationMissionNotFound = nameof(GamificationMissionNotFound);
+
+    /// <summary>
+    /// Gamification: Workout session already awarded points.
+    /// </summary>
+    public const string GamificationSessionAlreadyAwarded = nameof(GamificationSessionAlreadyAwarded);
+
+    /// <summary>
+    /// Gamification: Daily points cap exceeded.
+    /// </summary>
+    public const string GamificationDailyCapExceeded = nameof(GamificationDailyCapExceeded);
+
+    /// <summary>
+    /// Gamification: Achievement definition not found.
+    /// </summary>
+    public const string GamificationAchievementNotFound = nameof(GamificationAchievementNotFound);
+
+    /// <summary>
+    /// Gamification: User level not initialized.
+    /// </summary>
+    public const string GamificationUserLevelNotFound = nameof(GamificationUserLevelNotFound);
 }

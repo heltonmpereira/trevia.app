@@ -130,6 +130,11 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IProfilePrivacyService, ProfilePrivacyService>();
 
+        services.AddScoped<TreviaApp.Application.Gamification.IPointAwardService, TreviaApp.Infrastructure.Gamification.PointAwardService>();
+        services.AddScoped<TreviaApp.Application.Gamification.IAchievementEvaluator, TreviaApp.Infrastructure.Gamification.AchievementEvaluator>();
+        services.AddScoped<TreviaApp.Application.Gamification.IStreakCalculator, TreviaApp.Infrastructure.Gamification.StreakCalculator>();
+        services.AddScoped<TreviaApp.Application.Gamification.IMissionProgressTracker, TreviaApp.Infrastructure.Gamification.MissionProgressTracker>();
+
         return services;
     }
 }

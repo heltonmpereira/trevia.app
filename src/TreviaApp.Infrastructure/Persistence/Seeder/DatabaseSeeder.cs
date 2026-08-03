@@ -28,6 +28,7 @@ public class DatabaseSeeder
         await SeedRolesAsync(ct);
         await SeedAdminAsync(ct);
         await SeedInitialExercisesAsync(ct);
+        await GamificationSeeder.SeedAsync(_db, ct);
     }
 
     private async Task SeedRolesAsync(CancellationToken ct)

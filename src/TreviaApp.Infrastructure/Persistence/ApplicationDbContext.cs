@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using TreviaApp.Application.Abstractions.Data;
 using TreviaApp.Domain.Coaching;
 using TreviaApp.Domain.Exercises;
+using TreviaApp.Domain.Gamification;
 using TreviaApp.Domain.Identity;
 using TreviaApp.Domain.Interfaces;
 using TreviaApp.Domain.Notifications;
@@ -45,6 +46,16 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
     public DbSet<ExerciseFeedback> ExerciseFeedbacks => Set<ExerciseFeedback>();
     public DbSet<SetFeedback> SetFeedbacks => Set<SetFeedback>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<PointTransaction> PointTransactions => Set<PointTransaction>();
+    public DbSet<UserLevel> UserLevels => Set<UserLevel>();
+    public DbSet<AchievementDefinition> AchievementDefinitions => Set<AchievementDefinition>();
+    public DbSet<UserAchievement> UserAchievements => Set<UserAchievement>();
+    public DbSet<UserStreak> UserStreaks => Set<UserStreak>();
+    public DbSet<DailyMissionDefinition> DailyMissionDefinitions => Set<DailyMissionDefinition>();
+    public DbSet<WeeklyMissionDefinition> WeeklyMissionDefinitions => Set<WeeklyMissionDefinition>();
+    public DbSet<UserDailyMission> UserDailyMissions => Set<UserDailyMission>();
+    public DbSet<UserWeeklyMission> UserWeeklyMissions => Set<UserWeeklyMission>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
@@ -97,6 +108,13 @@ public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, Guid>, I
         builder.Entity<ExerciseFeedback>().HasQueryFilter(w => !w.IsDeleted);
         builder.Entity<SetFeedback>().HasQueryFilter(w => !w.IsDeleted);
         builder.Entity<Notification>().HasQueryFilter(n => !n.IsDeleted);
+
+        builder.Entity<AchievementDefinition>().HasQueryFilter(a => !a.IsDeleted);
+        builder.Entity<UserAchievement>().HasQueryFilter(a => !a.IsDeleted);
+        builder.Entity<DailyMissionDefinition>().HasQueryFilter(m => !m.IsDeleted);
+        builder.Entity<WeeklyMissionDefinition>().HasQueryFilter(m => !m.IsDeleted);
+        builder.Entity<UserDailyMission>().HasQueryFilter(m => !m.IsDeleted);
+        builder.Entity<UserWeeklyMission>().HasQueryFilter(m => !m.IsDeleted);
     }
 
     private static void ConfigureDefaultDecimalPrecision(ModelBuilder builder)
