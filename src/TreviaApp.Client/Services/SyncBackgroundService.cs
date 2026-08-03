@@ -1,10 +1,14 @@
+using Microsoft.Extensions.Hosting;
+
 namespace TreviaApp.Client.Services;
 
-public class SyncBackgroundService : BackgroundService
+public class SyncBackgroundService : IHostedService, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly PeriodicTimer _timer;
     private bool _previousOnline = true;
+    private CancellationTokenSource? _cts;
+    private Task? _executingTask;
 
     public SyncBackgroundService(IServiceProvider services)
     {
@@ -12,7 +16,37 @@ public class SyncBackgroundService : BackgroundService
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _executingTask = ExecuteAsync(_cts.Token);
+        if (_executingTask.IsCompleted)
+        {
+            return _executingTask;
+        }
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (_executingTask == null)
+        {
+            return;
+        }
+
+        try
+        {
+            _cts?.Cancel();
+        }
+        finally
+        {
+            await _executingTask
+                .WaitAsync(cancellationToken)
+                .ContinueWith(_ => { }, cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+    }
+
+    private async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -65,10 +99,11 @@ public class SyncBackgroundService : BackgroundService
         return true;
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
         _timer.Dispose();
-        base.Dispose();
+        _cts?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 
